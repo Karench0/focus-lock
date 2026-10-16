@@ -1,6 +1,8 @@
-# Focus Lock 0.1.0 — Windows preview
+# Focus Lock 0.1.1 — Windows preview
 
-The first public preview includes the Go/Wails Windows app, Russian/English graphite UI, application and website profiles, backend session/exit timers, SQLite statistics, tray lifecycle, and a Chrome/Edge Manifest V3 companion extension.
+This update fixes missing website styles/scripts in strict mode and the extension-folder button. In Websites, expand Resource domains and explicitly approve the required CDN domains. GitHub has a suggested list. Resource permissions apply only to requests originating from the selected site; direct navigation and embedded frames remain blocked. Update the desktop app and reload the unpacked extension, approve resources before starting a new session, then reload the website. Existing profiles are preserved.
+
+The public preview includes the Go/Wails Windows app, Russian/English graphite UI, application and website profiles, backend session/exit timers, SQLite statistics, tray lifecycle, and a Chrome/Edge Manifest V3 companion extension.
 
 Download the **Windows x64 ZIP** and extract everything together, or use the per-user **setup executable**. The GUI requires WebView2. For website filtering, connect the local bridge in Settings and load the bundled `browser-extension` folder in your browser's Developer mode. The extension is not in a browser store yet.
 

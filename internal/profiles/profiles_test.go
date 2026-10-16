@@ -15,3 +15,27 @@ func TestProfileValidation(t *testing.T) {
 		t.Fatal("duplicate domain accepted")
 	}
 }
+
+func TestResourceDomainsAreNormalizedAndValidated(t *testing.T) {
+	p := model.Profile{Name: "Work", Mode: "strict", Websites: []model.Website{{Domain: "github.com", Resources: []string{" GITHUB.GITHUBASSETS.COM ", "пример.рф"}}}}
+	if err := Validate(&p); err != nil {
+		t.Fatal(err)
+	}
+	if p.Websites[0].Resources[0] != "github.githubassets.com" || p.Websites[0].Resources[1] != "xn--e1afmkfd.xn--p1ai" {
+		t.Fatal(p)
+	}
+	p.Websites[0].Resources = []string{"cdn.example.com", "CDN.EXAMPLE.COM"}
+	if Validate(&p) == nil {
+		t.Fatal("duplicate resource accepted")
+	}
+	p.Websites[0].Resources = []string{"https://cdn.example.com"}
+	if Validate(&p) == nil {
+		t.Fatal("resource URL accepted")
+	}
+}
+func TestResourceBudget(t *testing.T) {
+	p := model.Profile{Name: "Work", Mode: "strict", Websites: []model.Website{{Domain: "example.com", Resources: make([]string, 17)}}}
+	if Validate(&p) == nil {
+		t.Fatal("per-site resource budget ignored")
+	}
+}

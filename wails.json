@@ -7,6 +7,12 @@
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
-  "author": {"name": "Karen Mkrtchyan", "email": ""},
-  "info": {"companyName": "Focus Lock contributors", "productName": "Focus Lock", "productVersion": "0.1.0", "copyright": "Copyright © 2026 Karen Mkrtchyan", "comments": "Voluntary focus for Windows"}
+  "author": { "name": "Karen Mkrtchyan", "email": "" },
+  "info": {
+    "companyName": "Focus Lock contributors",
+    "productName": "Focus Lock",
+    "productVersion": "0.1.1",
+    "copyright": "Copyright © 2026 Karen Mkrtchyan",
+    "comments": "Voluntary focus for Windows"
+  }
 }

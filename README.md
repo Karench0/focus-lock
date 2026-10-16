@@ -63,7 +63,7 @@ The unpacked extension has a stable public-key-derived ID, `ilmpmofmjbomibcnecek
 ## Quick Start
 
 1. Select a profile and open **Applications**. Allow your editor, reader, terminal or other required tools. Add portable executables with **Add .exe**.
-2. In **Websites**, add domains such as `go.dev` and `github.com`. Enable subdomains only when needed. Add `localhost` explicitly for local development; any port is then allowed for that hostname.
+2. In **Websites**, add domains such as `go.dev` and `github.com`. Enable subdomains only when needed. Add `localhost` explicitly for local development; any port is then allowed for that hostname. If styles, scripts or images are hosted elsewhere, expand **Resource domains** for the site and approve its exact CDN domains. GitHub offers an explicit suggestion button. These permissions allow resources only from that site, not navigation or embedded frames to the CDN.
 3. Configure an early-exit delay in **Settings** (60 seconds by default).
 4. Return to Dashboard, choose 15–120 minutes or a custom 1–1440 minutes, and press **Start Focus**.
 5. If the preflight lists disallowed open applications, save your work and close them, or update the profile. Retry when ready. Starting never silently kills these existing windows.

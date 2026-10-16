@@ -20,6 +20,7 @@ export function compileRules(state) {
   )
     throw new Error("Invalid policy");
   const rules = [];
+  let resourceCount = 0;
   if (state.mode === "strict") {
     rules.push({
       id: 1,
@@ -60,6 +61,23 @@ export function compileRules(state) {
         action: { type: "allow" },
         condition: { ...condition, excludedResourceTypes: ["main_frame"] },
       });
+      const resources = site.resources ?? [];
+      if (!Array.isArray(resources) || resources.length > 16)
+        throw new Error("Invalid resource policy");
+      for (const resource of resources) {
+        if (++resourceCount > 200) throw new Error("Too many resource domains");
+        rules.push({
+          id: 1000 + resourceCount,
+          priority: 10,
+          action: { type: "allow" },
+          condition: {
+            regexFilter: domainRegex(resource, false),
+            isUrlFilterCaseSensitive: false,
+            initiatorDomains: [site.domain],
+            excludedResourceTypes: ["main_frame", "sub_frame"],
+          },
+        });
+      }
     } else {
       rules.push({
         id: 10 + i * 2,

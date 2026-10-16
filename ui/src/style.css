@@ -1,4 +1,67 @@
 @import "tailwindcss";
+.site-entry + .site-entry {
+  border-top: 1px solid #272e38;
+}
+.site-entry .site-row {
+  border-bottom: 0;
+}
+.resource-details {
+  margin: 0 20px 18px 69px;
+  color: #8d9eb6;
+  font-size: 11px;
+}
+.resource-details summary {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  cursor: pointer;
+  color: #91b4e4;
+  padding: 6px 0;
+}
+.resource-details p {
+  margin: 8px 0;
+  font-size: 11px;
+}
+.resource-details form {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+.resource-details label {
+  flex: 1;
+  min-width: 0;
+}
+.resource-details textarea {
+  display: block;
+  resize: vertical;
+  width: 100%;
+  margin-top: 6px;
+  min-height: 62px;
+  border: 1px solid #303640;
+  border-radius: 7px;
+  padding: 10px;
+  background: #111418;
+  color: #f1f3f5;
+  font: inherit;
+}
+.resource-details textarea:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+.resource-suggestion {
+  background: #192538;
+  border: 1px solid #2c4362;
+  border-radius: 8px;
+  padding: 11px 13px;
+}
+.resource-suggestion code {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  color: #91a8c8;
+  margin: 8px 0 12px;
+}
 @theme {
   --color-background: #0d0f12;
   --color-panel: #191d23;

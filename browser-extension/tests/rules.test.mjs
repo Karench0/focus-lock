@@ -51,6 +51,71 @@ test("blocklist only blocks listed domains", () => {
   assert.equal(r.length, 2);
   assert.ok(r.every((x) => x.condition.regexFilter.includes("example\\.com")));
 });
+test("CDN permissions require explicit approval and stay scoped to the originating website", () => {
+  const r = compileRules({
+    active: true,
+    mode: "strict",
+    websites: [
+      {
+        domain: "github.com",
+        subdomains: false,
+        resources: ["github.githubassets.com"],
+      },
+    ],
+  });
+  const resource = r.find((rule) => rule.id === 1001);
+  assert.equal(resource.action.type, "allow");
+  assert.deepEqual(resource.condition.initiatorDomains, ["github.com"]);
+  assert.deepEqual(resource.condition.excludedResourceTypes, [
+    "main_frame",
+    "sub_frame",
+  ]);
+  assert.ok(
+    new RegExp(resource.condition.regexFilter).test(
+      "https://github.githubassets.com/assets/app.css",
+    ),
+  );
+  assert.equal(
+    new RegExp(resource.condition.regexFilter).test(
+      "https://github.githubassets.com.evil.test/app.js",
+    ),
+    false,
+  );
+  const old = compileRules({
+    active: true,
+    mode: "strict",
+    websites: [{ domain: "github.com", subdomains: false }],
+  });
+  assert.equal(
+    old.some((rule) => rule.condition.initiatorDomains),
+    false,
+    "existing profiles must not silently grant CDN access",
+  );
+});
+test("resource policies are bounded and ignored in blocklist mode", () => {
+  assert.throws(() =>
+    compileRules({
+      active: true,
+      mode: "strict",
+      websites: [
+        { domain: "example.com", resources: Array(17).fill("cdn.example.com") },
+      ],
+    }),
+  );
+  assert.throws(() =>
+    compileRules({
+      active: true,
+      mode: "strict",
+      websites: [{ domain: "example.com", resources: ["*.example.com"] }],
+    }),
+  );
+  const rules = compileRules({
+    active: true,
+    mode: "blocklist",
+    websites: [{ domain: "example.com", resources: ["cdn.example.com"] }],
+  });
+  assert.equal(rules.length, 2);
+});
 test("idle and invalid policies cannot retain restrictions", () => {
   assert.deepEqual(compileRules({ active: false }), []);
   assert.throws(() =>

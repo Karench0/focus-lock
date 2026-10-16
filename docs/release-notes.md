@@ -1,6 +1,8 @@
-# Focus Lock 0.1.1 — Windows preview
+# Focus Lock 0.2.0 — Windows preview
 
-This update fixes missing website styles/scripts in strict mode and the extension-folder button. In Websites, expand Resource domains and explicitly approve the required CDN domains. GitHub has a suggested list. Resource permissions apply only to requests originating from the selected site; direct navigation and embedded frames remain blocked. Update the desktop app and reload the unpacked extension, approve resources before starting a new session, then reload the website. Existing profiles are preserved.
+A compact timer now sits above other windows during a session. Click **Mini timer**, move it by its grip, stop with confirmation and the existing delay, or expand back to the original window. Resize takes 240 ms and respects reduced motion. The timer can stay compact when a session finishes.
+
+The preceding update fixes missing website styles/scripts in strict mode and the extension-folder button. In Websites, expand Resource domains and explicitly approve the required CDN domains. GitHub has a suggested list. Resource permissions apply only to requests originating from the selected site; direct navigation and embedded frames remain blocked. Update the desktop app and reload the unpacked extension, approve resources before starting a new session, then reload the website. Existing profiles are preserved.
 
 The public preview includes the Go/Wails Windows app, Russian/English graphite UI, application and website profiles, backend session/exit timers, SQLite statistics, tray lifecycle, and a Chrome/Edge Manifest V3 companion extension.
 

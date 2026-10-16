@@ -41,10 +41,16 @@ type App struct {
 	quitting  atomic.Bool
 	trayReady atomic.Bool
 	ctxMu     sync.RWMutex
+	window    *desktop.TimerWindow
 }
 
-func (a *App) context() context.Context    { a.ctxMu.RLock(); defer a.ctxMu.RUnlock(); return a.ctx }
-func (a *App) startup(ctx context.Context) { a.ctxMu.Lock(); a.ctx = ctx; a.ctxMu.Unlock() }
+func (a *App) context() context.Context { a.ctxMu.RLock(); defer a.ctxMu.RUnlock(); return a.ctx }
+func (a *App) startup(ctx context.Context) {
+	a.window = desktop.NewTimerWindow(nativeWindow{ctx})
+	a.ctxMu.Lock()
+	a.ctx = ctx
+	a.ctxMu.Unlock()
+}
 func (a *App) domReady(ctx context.Context) {
 	a.service.SetNotify(func() {
 		_ = runtime.SendNotification(ctx, runtime.NotificationOptions{Title: "Focus Lock", Body: "Сессия завершена / Session complete. Ограничения сняты / Restrictions lifted."})
@@ -60,10 +66,9 @@ func (a *App) domReady(ctx context.Context) {
 			for {
 				select {
 				case <-show.ClickedCh:
-					runtime.WindowShow(ctx)
-					runtime.WindowUnminimise(ctx)
+					a.showFullWindow()
 				case <-quit.ClickedCh:
-					runtime.WindowShow(ctx)
+					a.showFullWindow()
 					if a.service.Active() {
 						runtime.EventsEmit(ctx, "close-request")
 					} else {
@@ -81,7 +86,10 @@ func (a *App) beforeClose(ctx context.Context) bool {
 	}
 	if a.service.Active() {
 		runtime.WindowShow(ctx)
-		runtime.EventsEmit(ctx, "close-request")
+		go func() {
+			_ = a.setCompact(false, true)
+			runtime.EventsEmit(ctx, "close-request")
+		}()
 		return true
 	}
 	return false
@@ -163,6 +171,45 @@ func (a *App) Call(command, payload string) (string, error) {
 			return "", fmt.Errorf("requires desktop app")
 		}
 		err = desktop.OpenExtensionFolder(a.dir)
+	case "windowMode":
+		var p struct {
+			Compact       bool `json:"compact"`
+			ReducedMotion bool `json:"reducedMotion"`
+		}
+		if err = decode(&p); err == nil {
+			err = a.setCompact(p.Compact, !p.ReducedMotion)
+		}
+	case "windowPosition":
+		ctx := a.context()
+		if ctx == nil {
+			return "", fmt.Errorf("requires desktop app")
+		}
+		x, y := runtime.WindowGetPosition(ctx)
+		result = map[string]int{"x": x, "y": y}
+	case "moveWindow":
+		if a.context() == nil {
+			return "", fmt.Errorf("requires desktop app")
+		}
+		var p struct {
+			X int `json:"x"`
+			Y int `json:"y"`
+		}
+		if err = decode(&p); err == nil {
+			if p.X < -100000 || p.X > 100000 || p.Y < -100000 || p.Y > 100000 {
+				return "", fmt.Errorf("invalid window position")
+			}
+			err = desktop.SetAbsolutePosition(p.X, p.Y)
+		}
+	case "minimise", "maximise":
+		ctx := a.context()
+		if ctx == nil {
+			return "", fmt.Errorf("requires desktop app")
+		}
+		if command == "minimise" {
+			runtime.WindowMinimise(ctx)
+		} else {
+			runtime.WindowToggleMaximise(ctx)
+		}
 	case "tray":
 		if a.context() == nil {
 			return "", fmt.Errorf("requires desktop app")
@@ -199,7 +246,8 @@ func main() {
 	}
 	dir := filepath.Dir(exe)
 	preview := len(os.Args) > 1 && os.Args[1] == "--preview"
-	if !preview {
+	windowPreview := len(os.Args) > 1 && os.Args[1] == "--window-preview"
+	if !preview && !windowPreview {
 		user, e := winapi.GetCurrentProcessToken().GetTokenUser()
 		if e != nil {
 			log.Fatal(e)
@@ -222,7 +270,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	svc, err := api.New(store, filepath.Join(dir, "FocusLock-host.exe"), preview)
+	svc, err := api.New(store, filepath.Join(dir, "FocusLock-host.exe"), preview || windowPreview)
 	if err != nil {
 		_ = store.Close()
 		log.Fatal(err)
@@ -235,7 +283,11 @@ func main() {
 		}
 		return
 	}
-	err = wails.Run(&options.App{Title: "Focus Lock", Width: 1220, Height: 850, MinWidth: 980, MinHeight: 730, BackgroundColour: options.NewRGB(13, 15, 18), AssetServer: &assetserver.Options{Assets: assets}, OnStartup: app.startup, OnDomReady: app.domReady, OnBeforeClose: app.beforeClose, OnShutdown: app.shutdown, Bind: []interface{}{app}, Windows: &windows.Options{Theme: windows.Dark, DisableWindowIcon: false}})
+	title := "Focus Lock"
+	if windowPreview {
+		title = "Focus Lock · Window preview"
+	}
+	err = wails.Run(&options.App{Title: title, Frameless: true, Width: 1220, Height: 850, MinWidth: 980, MinHeight: 730, BackgroundColour: options.NewRGB(13, 15, 18), AssetServer: &assetserver.Options{Assets: assets}, OnStartup: app.startup, OnDomReady: app.domReady, OnBeforeClose: app.beforeClose, OnShutdown: app.shutdown, Bind: []interface{}{app}, Windows: &windows.Options{Theme: windows.Dark, DisableWindowIcon: false, ResizeDebounceMS: 0}})
 	if err != nil {
 		svc.Close()
 		log.Fatal(err)

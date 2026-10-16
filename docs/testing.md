@@ -70,3 +70,11 @@ Do not tag 1.0.0 until these checks are recorded on Windows 11 with current Chro
 7. Verify local files, browser caches/service-worker responses, existing tabs and authentication/CDN dependencies are described accurately.
 
 CI reruns automated checks on a Windows runner. A green CI result alone does not satisfy the manual/hardware gates above.
+
+## Compact window verification — 2026-10-16
+
+UI E2E covers entering/expanding the mini timer, confirmation without stopping, exit countdown/cancel without changing session ID, natural completion inside the mini timer, and viewport overflow at 420 × 180. Geometry tests cover restoring bounds after dragging, duplicate requests, maximised state, animation monotonicity and reduced motion.
+
+For manual native checks, use a separate `FOCUS_LOCK_DATA_DIR` and launch `FocusLock.exe --window-preview`. This diagnostic mode disables process/website enforcement and bypasses the production instance lock; it is for UI checks only. Check native dragging, maximise → compact → restore, tray hide/Open, Alt+F4 while compact, and 100/125/150% DPI. Automated tests do not replace the remaining hardware/multi-monitor gates above.
+
+Native Windows preview results: compact resizing reached 420 × 180; pointer dragging moved the window from (958, 189) to (1146, 288) at the current 125% display scale; expanding restored (958, 189) and the original size. Maximise/compact/expand was also checked. The session continued throughout. Mixed-DPI physical monitor changes remain a manual compatibility check.

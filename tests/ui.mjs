@@ -159,6 +159,38 @@ try {
     .getByRole("button", { name: "End session early", exact: true })
     .waitFor();
   await screenshot("active-session");
+  const activeID = (await api("state")).session.id;
+  await page.getByRole("button", { name: "Mini timer", exact: true }).click();
+  await page.setViewportSize({ width: 420, height: 180 });
+  await page.getByRole("region", { name: "Mini timer", exact: true }).waitFor();
+  await screenshot("mini-timer");
+  assert.equal(
+    await page.evaluate(() => document.documentElement.scrollWidth),
+    420,
+  );
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByText("End this session early?", { exact: true }).waitFor();
+  assert.equal((await api("state")).session.state, "ACTIVE");
+  await page
+    .getByRole("button", { name: "Keep focusing", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByRole("button", { name: "Stop", exact: true }).click();
+  await page.getByText("ENDING IN", { exact: true }).waitFor();
+  assert.equal((await api("state")).session.state, "EXIT_PENDING");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  await page.getByText("TIME REMAINING", { exact: true }).waitFor();
+  assert.equal((await api("state")).session.id, activeID);
+  await page
+    .getByRole("button", { name: "Expand window", exact: true })
+    .click();
+  await page.setViewportSize({ width: 1320, height: 900 });
+  await page
+    .getByRole("button", { name: "End session early", exact: true })
+    .waitFor();
+  console.log(
+    "PASS compact timer: confirmation, exit delay, cancellation, unchanged session and restore",
+  );
   await assert.rejects(api("saveProfile", profile), /locked/);
   await assert.rejects(
     api("saveSettings", {
@@ -194,6 +226,9 @@ try {
   console.log("PASS early exit, cancellation, delay expiry and mutation lock");
   await page.getByRole("button", { name: "New session", exact: true }).click();
   await api("start", { id: profile.id, minutes: 1 });
+  await delay(1200);
+  await page.getByRole("button", { name: "Mini timer", exact: true }).click();
+  await page.setViewportSize({ width: 420, height: 180 });
   console.log("Waiting for a real 60-second natural completion…");
   for (let i = 0; i < 70; i++) {
     if ((await api("state")).session.state === "FINISHED") break;
@@ -203,6 +238,13 @@ try {
   assert.equal(state.session.outcome, "completed");
   assert.equal(state.statistics.completed, 1);
   assert.equal(state.statistics.interrupted, 1);
+  await page.getByText("Session complete", { exact: true }).waitFor();
+  await screenshot("mini-complete");
+  await page
+    .getByRole("button", { name: "Expand window", exact: true })
+    .first()
+    .click();
+  await page.setViewportSize({ width: 1320, height: 900 });
   await page
     .getByRole("button", { name: "View statistics", exact: true })
     .click();

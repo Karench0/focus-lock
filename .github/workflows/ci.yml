@@ -1,0 +1,61 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.6'
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Go formatting
+        shell: pwsh
+        run: |
+          $bad = gofmt -l (git ls-files '*.go')
+          if ($bad) { throw "Run gofmt on: $bad" }
+      - run: npm ci
+        working-directory: ui
+      - run: npm run typecheck
+        working-directory: ui
+      - run: npm run lint
+        working-directory: ui
+      - run: npm test
+        working-directory: ui
+      - run: npm run build
+        working-directory: ui
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - name: Windows build
+        shell: pwsh
+        run: ./scripts/build.ps1 -SkipFrontend
+      - name: Browser integration dependencies
+        working-directory: tests
+        run: npm ci
+      - name: Isolated Chromium
+        working-directory: tests
+        run: npx playwright install chromium
+      - name: UI end-to-end tests
+        working-directory: tests
+        run: npm run ui
+      - name: Native Messaging and fail-open integration
+        shell: pwsh
+        run: |
+          go build -o build/bin/bridge-fixture.exe ./internal/bridge/testdata/server
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture build failed' }
+          Push-Location tests
+          try { npm run extension; if ($LASTEXITCODE -ne 0) { throw 'Extension integration failed' } } finally { Pop-Location }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FocusLock-windows-amd64
+          path: build/bin/

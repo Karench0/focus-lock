@@ -1,0 +1,21 @@
+name: Bug report
+description: Report reproducible incorrect behavior
+body:
+  - type: input
+    id: version
+    attributes:
+      label: App version, Windows build and browser version
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps, expected behavior and actual behavior
+      description: Remove personal paths, page contents and browsing history.
+    validations:
+      required: true
+  - type: textarea
+    id: recovery
+    attributes:
+      label: Did ending Focus Lock or restarting the browser restore access?
+      description: Use private vulnerability reporting for sensitive security details.

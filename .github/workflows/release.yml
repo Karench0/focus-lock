@@ -1,0 +1,44 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.6'
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+      - name: Build
+        shell: pwsh
+        run: ./scripts/build.ps1
+      - run: go vet ./...
+      - run: go test -race -count=1 ./...
+      - run: npm run lint
+        working-directory: ui
+      - run: npm test
+        working-directory: ui
+      - name: Package
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME -replace '^v',''
+          ./scripts/package.ps1 -Version $version -Installer
+      - name: Publish release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $args = @('release', 'create', $env:GITHUB_REF_NAME, '--title', "Focus Lock $env:GITHUB_REF_NAME", '--notes-file', 'docs/release-notes.md')
+          if ($env:GITHUB_REF_NAME -match '^v0\.' -or $env:GITHUB_REF_NAME -match '-') { $args += '--prerelease' }
+          $args += (Get-ChildItem build/release -File).FullName
+          & gh @args
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }

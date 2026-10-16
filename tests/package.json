@@ -1,0 +1,12 @@
+{
+  "name": "focus-lock-integration-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "ui": "node ui.mjs",
+    "extension": "node extension.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

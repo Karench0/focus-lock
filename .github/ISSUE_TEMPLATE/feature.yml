@@ -1,0 +1,13 @@
+name: Feature request
+description: Suggest an improvement
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: What task would this help you complete?
+    validations:
+      required: true
+  - type: textarea
+    id: behavior
+    attributes:
+      label: Proposed behavior and safety implications

@@ -3,6 +3,7 @@ ui/dist/
 ui/wailsjs/
 *.tsbuildinfo
 ui/package.json.md5
+focus-lock-native-host.json
 build/bin/
 build/release/
 build/windows/installer/

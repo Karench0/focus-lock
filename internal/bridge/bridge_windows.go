@@ -238,16 +238,14 @@ func Register(hostPath string) error {
 	if _, err = os.Stat(hostPath); err != nil {
 		return err
 	}
-	dataDir := filepath.Join(os.Getenv("LOCALAPPDATA"), "FocusLock")
-	if err = os.MkdirAll(dataDir, 0700); err != nil {
-		return err
-	}
 	manifest := map[string]any{"name": HostName, "description": "Focus Lock local bridge", "path": hostPath, "type": "stdio", "allowed_origins": []string{"chrome-extension://" + ExtensionID + "/"}}
 	b, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
 		return err
 	}
-	path := filepath.Join(dataDir, "native-host.json")
+	// Keep registrations distinct across portable/installed copies so an
+	// uninstaller can remove only the host registration that it owns.
+	path := filepath.Join(filepath.Dir(hostPath), "focus-lock-native-host.json")
 	if err = os.WriteFile(path, b, 0600); err != nil {
 		return err
 	}

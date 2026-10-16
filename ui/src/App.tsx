@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
@@ -29,6 +29,8 @@ import {
 import type { Application, Page, Profile, Settings, State } from "./types";
 import { call } from "./api";
 import { copy } from "./i18n";
+import { CompactTimer } from "./CompactTimer";
+import { WindowBar } from "./WindowBar";
 import { WebsiteResources } from "./WebsiteResources";
 
 const pages: Page[] = [
@@ -191,6 +193,9 @@ function Empty({
 }
 
 export function App() {
+  const [compact, setCompact] = useState(false);
+  const [windowBusy, setWindowBusy] = useState(false);
+  const reducedMotion = useReducedMotion();
   const [data, setData] = useState<State>();
   const [page, setPage] = useState<Page>("dashboard");
   const [profileID, setProfileID] = useState(
@@ -256,6 +261,30 @@ export function App() {
     const timer = setTimeout(() => setNotice(""), 2400);
     return () => clearTimeout(timer);
   }, [notice]);
+  useEffect(() => {
+    const off = window.runtime?.EventsOn("window-mode", (value) =>
+      setCompact(value === true),
+    );
+    return () => off?.();
+  }, []);
+  const changeWindow = async (next: boolean) => {
+    if (windowBusy) return;
+    setWindowBusy(true);
+    if (next) setCompact(true);
+    try {
+      if (window.go)
+        await call("windowMode", {
+          compact: next,
+          reducedMotion: !!reducedMotion,
+        });
+      setCompact(next);
+    } catch (e) {
+      setCompact(!next);
+      setError(String(e));
+    } finally {
+      setWindowBusy(false);
+    }
+  };
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError("");
@@ -691,8 +720,55 @@ export function App() {
   const onboarding = !data.settings.onboarded;
   const finished =
     data.session.state === "FINISHED" && dismissedSession !== data.session.id;
+  if (compact)
+    return (
+      <CompactTimer
+        onError={setError}
+        data={data}
+        busy={busy || windowBusy}
+        error={error || data.error}
+        onExpand={() => void changeWindow(false)}
+        onHide={() =>
+          void run(async () => {
+            await call("tray");
+          })
+        }
+        onStop={() =>
+          void run(async () => {
+            await call("requestExit");
+          })
+        }
+        onCancel={() =>
+          void run(async () => {
+            await call("cancelExit");
+          })
+        }
+      />
+    );
   return (
     <div className="app-shell">
+      <WindowBar
+        onError={setError}
+        language={data.settings.language}
+        canCompact={!!active && !onboarding}
+        busy={windowBusy}
+        onCompact={() => void changeWindow(true)}
+        onMinimise={() =>
+          void run(async () => {
+            await call("minimise");
+          })
+        }
+        onMaximise={() =>
+          void run(async () => {
+            await call("maximise");
+          })
+        }
+        onClose={() =>
+          void run(async () => {
+            await call("quit");
+          })
+        }
+      />
       <aside className="sidebar">
         <div className="brand">
           <div className="brand-mark">
@@ -727,7 +803,7 @@ export function App() {
             <LockKeyhole size={15} />
             {t.local}
           </div>
-          <span className="version">v0.1.1 · Windows</span>
+          <span className="version">v0.2.0 · Windows</span>
         </div>
       </aside>
       <main>

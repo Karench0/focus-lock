@@ -1,4 +1,4 @@
-param([string]$Version = '0.1.1', [switch]$Installer)
+param([string]$Version = '0.2.0', [switch]$Installer)
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?$') { throw 'Invalid version' }
 Push-Location (Join-Path $PSScriptRoot '..')

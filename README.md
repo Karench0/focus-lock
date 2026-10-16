@@ -23,6 +23,7 @@ Focus Lock is a local desktop app for voluntary, time-limited focus on Windows 1
 - Explicit child-process permission limited to the selected application's installation directory.
 - Strict website allowlist by default, or a distraction blocklist; exact domains, optional subdomains, IDN normalization and localhost.
 - Separate profiles for work, reading, study, and any task you create.
+- A draggable, always-on-top mini timer with a short resize animation and the same early-exit confirmation/delay as the main window.
 - Go-owned session and exit clocks, preset or custom lengths, configurable exit delay, and cancellation of an early exit.
 - SQLite settings, local session history, daily/weekly charts and aggregate blocked-attempt counts.
 - A Windows tray icon, close-window choices, completion notification, and English/Russian UI (Russian by default).
@@ -64,10 +65,11 @@ The unpacked extension has a stable public-key-derived ID, `ilmpmofmjbomibcnecek
 
 1. Select a profile and open **Applications**. Allow your editor, reader, terminal or other required tools. Add portable executables with **Add .exe**.
 2. In **Websites**, add domains such as `go.dev` and `github.com`. Enable subdomains only when needed. Add `localhost` explicitly for local development; any port is then allowed for that hostname. If styles, scripts or images are hosted elsewhere, expand **Resource domains** for the site and approve its exact CDN domains. GitHub offers an explicit suggestion button. These permissions allow resources only from that site, not navigation or embedded frames to the CDN.
-3. Configure an early-exit delay in **Settings** (60 seconds by default).
-4. Return to Dashboard, choose 15–120 minutes or a custom 1–1440 minutes, and press **Start Focus**.
-5. If the preflight lists disallowed open applications, save your work and close them, or update the profile. Retry when ready. Starting never silently kills these existing windows.
-6. Work until the timer ends. To leave early, confirm and wait out your chosen delay. You can cancel that countdown while the main timer continues.
+3. During a session, click **Mini timer** in the title bar. Drag its grip to move it; use the arrow to return to the original window. Stop requests confirmation and keeps restrictions active throughout the configured delay. The minus icon hides it in the system tray; the tray’s Open item restores the full window.
+4. Configure an early-exit delay in **Settings** (60 seconds by default).
+5. Return to Dashboard, choose 15–120 minutes or a custom 1–1440 minutes, and press **Start Focus**.
+6. If the preflight lists disallowed open applications, save your work and close them, or update the profile. Retry when ready. Starting never silently kills these existing windows.
+7. Work until the timer ends. To leave early, confirm and wait out your chosen delay. You can cancel that countdown while the main timer continues.
 
 Closing the window during a session offers **Minimize to tray** or the early-exit procedure. Use the tray icon to reopen it. If needed, end `FocusLock.exe` in Task Manager; process enforcement stops immediately, and the extension clears its rules on native disconnection or lease expiry.
 

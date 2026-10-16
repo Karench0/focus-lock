@@ -205,17 +205,91 @@ try {
   const allowed = `http://localhost:${port}/page`;
   const blocked = `http://127.0.0.1:${port}/page`;
   const rules = {
-    sessionId: "a".repeat(32),
+    sessionId: "e".repeat(32),
     active: true,
+    exercise: true,
     mode: "strict",
-    websites: [{ domain: "localhost", subdomains: false }],
+    websites: [
+      { domain: "localhost", subdomains: false, resources: ["127.0.0.1"] },
+    ],
     language: "en",
     leaseMs: 6000,
   };
+  // Exercise mode also stops documents that were already open while idle.
+  await page.goto(allowed);
+  await page.evaluate(() => {
+    window.studyTabMarker = "allowed document was preserved";
+  });
+  const existingBlocked = await context.newPage();
+  await existingBlocked.goto(blocked);
+  assert.equal(await existingBlocked.title(), "Focus Lock test destination");
+  await api(rules);
+  await until(async () =>
+    (await api()).some(
+      (s) => s.applied === rules.sessionId && s.connected && s.studyCapable,
+    ),
+  );
+  await existingBlocked.waitForURL(
+    `chrome-extension://${extensionID}/blocked.html`,
+  );
+  assert.equal(page.url(), allowed);
+  assert.equal(
+    await page.evaluate(() => window.studyTabMarker),
+    "allowed document was preserved",
+  );
+  console.log(
+    "PASS exercise replaces previously open restricted web tabs before acknowledgement and preserves allowed documents",
+  );
+  await existingBlocked.close();
+  if (process.env.FOCUS_LOCK_LIVE_KOTLIN === "1") {
+    rules.sessionId = "f".repeat(32);
+    rules.websites = [
+      {
+        domain: "kotlinlang.org",
+        subdomains: false,
+        resources: ["resources.jetbrains.com"],
+      },
+    ];
+    await api(rules);
+    await until(async () =>
+      (await api()).some(
+        (s) => s.applied === rules.sessionId && s.connected && s.studyCapable,
+      ),
+    );
+    await page.goto("https://kotlinlang.org/docs/home.html", {
+      waitUntil: "load",
+      timeout: 60000,
+    });
+    assert.match(await page.title(), /Kotlin/);
+    assert.ok(
+      await page.evaluate(() => document.styleSheets.length > 0),
+      "official Kotlin documentation stylesheet must actually load",
+    );
+    console.log(
+      "PASS live Kotlin documentation loads with styles in exercise mode using scoped first-party resources",
+    );
+  }
+  await api({ ...rules, active: false });
+  await until(async () => (await api()).some((s) => s.applied === ""));
+  const existingOrdinary = await context.newPage();
+  await existingOrdinary.goto(blocked);
+  await existingOrdinary.evaluate(() => {
+    window.ordinaryTabMarker = "ordinary session did not replace this tab";
+  });
+  rules.sessionId = "a".repeat(32);
+  rules.exercise = false;
+  rules.websites = [{ domain: "localhost", subdomains: false }];
   await api(rules);
   await until(async () =>
     (await api()).some((s) => s.applied === rules.sessionId && s.connected),
   );
+  assert.equal(existingOrdinary.url(), blocked);
+  assert.equal(
+    await existingOrdinary.evaluate(() => window.ordinaryTabMarker),
+    "ordinary session did not replace this tab",
+  );
+  await existingOrdinary.close();
+  console.log("PASS ordinary focus sessions leave existing tabs unchanged");
   await page.goto(allowed);
   if ((await page.title()) !== "Focus Lock test destination") {
     console.error(

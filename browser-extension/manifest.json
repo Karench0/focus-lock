@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Focus Lock",
-  "version": "0.1.1",
+  "version": "0.3.0",
   "description": "Voluntary focus. Website rules from the local Focus Lock app, with automatic fail-open.",
   "minimum_chrome_version": "120",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmmcBmhBZn6H5ndwADQc0h2v7yYuZl/FjZPgR4VXaAFHUmzTlQqspqhLI2CyzYGD6u+qJ711yXUppjQhrXrxKlEVF77Z4j8pOBOsYhm4s28v5Ar7y+pgeedprq8NjHzb95R7MypV7oZkHU1h3TfeDIIaIsDOmQnyB00PULp7LMxsByB++On6RE3VT/Y4OjG8Snc9qD+vr/MNkFwVjwYsO71nDWQE4Q6EFUPZ2nWcqRVuCWCid/9RjrwRdn8VAoYKGOLfhEZnhRwBXYFYhGf53u+hZiiw1Tc/BLOUhnks1FCZ6JkzVg92ABuwXJbSwoAjVyqsSwQaDd2CC02Zgt1YpxQIDAQAB",

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 — 2026-10-16 (prerelease)
+
+- Hidden personal Storozhenko mode behind a timed triple activation in Settings, with explicit identity/consent confirmation.
+- An untimed Kotlin-only exercise uses a temporary policy and preserves normal profiles/settings. Existing unrelated apps and web tabs are reviewed before enabling; default Chrome/Edge must have an updated, connected extension.
+- Opens official Kotlin documentation in the default browser; permits its scoped font resources and installed IntelliJ IDEA/Android Studio helpers.
+- Twenty distinct middle-level Kotlin questions with eight shuffled options, one-use challenges and backend answer validation. Wrong answers keep the exercise active; a correct answer finishes it.
+- Normal early exit cannot bypass the exercise. Closing or crashing the app still releases restrictions; no exercise automatically restarts.
+
 ## 0.2.0 — 2026-10-16 (prerelease)
 
 - Compact, always-on-top 420 × 180 timer with native dragging, progress, stop confirmation and an inline early-exit countdown.

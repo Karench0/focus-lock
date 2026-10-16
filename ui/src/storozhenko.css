@@ -1,0 +1,405 @@
+.storozhenko-settings {
+  min-width: 0;
+}
+.storozhenko-secret-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1px;
+}
+.storozhenko-secret,
+.storozhenko-secret:hover,
+.storozhenko-secret:active {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  padding: 7px;
+  border: 0;
+  background: transparent;
+  cursor: default;
+  border-radius: 50%;
+}
+.storozhenko-secret::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  flex: 0 0 10px;
+  border: 1px solid #526177;
+  border-radius: 50%;
+  background: #263142;
+}
+.storozhenko-secret:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 1px;
+}
+.storozhenko-panel {
+  border-color: #344156;
+  background: linear-gradient(125deg, #192230, #171c23 70%);
+}
+.storozhenko-panel-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  margin-bottom: 16px;
+}
+.storozhenko-panel-heading .eyebrow {
+  font-size: 8px;
+  margin-bottom: 3px;
+  color: #8096b4;
+}
+.storozhenko-panel-heading .toggle {
+  margin-left: auto;
+}
+.storozhenko-book {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #35455d;
+  border-radius: 10px;
+  color: #8db9f2;
+  background: #223047;
+}
+.storozhenko-panel-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #8e9db1;
+  font-size: 11px;
+}
+.storozhenko-panel-note svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.storozhenko-panel-note.active {
+  color: #a0c4f5;
+}
+.modal:has(.storozhenko-consent),
+.modal:has(.kotlin-challenge) {
+  width: 660px;
+  max-height: min(90vh, 850px);
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #3d4b60 transparent;
+}
+.storozhenko-consent .eyebrow,
+.kotlin-challenge .eyebrow {
+  margin-bottom: 9px;
+  color: #7f9bc0;
+  font-size: 8px;
+}
+.storozhenko-consent .modal-symbol,
+.kotlin-challenge .modal-symbol {
+  margin-bottom: 19px;
+}
+.storozhenko-effects {
+  list-style: disc;
+  padding-left: 19px;
+  margin: 18px 0;
+  color: #b6c1d1;
+  font-size: 12px;
+}
+.storozhenko-effects li + li {
+  margin-top: 10px;
+}
+.storozhenko-effects li::marker {
+  color: #709bda;
+}
+.storozhenko-preflight {
+  border: 1px solid #3e3d36;
+  border-radius: 8px;
+  background: #25231e;
+  padding: 12px 14px;
+  margin: 17px 0;
+  color: #d5c6a5;
+  font-size: 11px;
+}
+.storozhenko-preflight summary {
+  cursor: pointer;
+}
+.storozhenko-preflight ul {
+  list-style: none;
+  max-height: 140px;
+  overflow: auto;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.storozhenko-preflight li + li {
+  margin-top: 9px;
+}
+.storozhenko-preflight strong,
+.storozhenko-preflight li span {
+  display: block;
+}
+.storozhenko-preflight li span {
+  color: #9d978b;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.modal p.storozhenko-preserved {
+  color: #8f9fb5;
+  font-size: 11px;
+}
+.storozhenko-browser-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #d9bc82;
+  font-size: 11px;
+  border: 1px solid #54442b;
+  background: #302719;
+  border-radius: 8px;
+  padding: 11px 13px;
+  margin-bottom: 16px;
+}
+.storozhenko-browser-warning svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.storozhenko-attestation {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid #35455d;
+  background: #1b2739;
+  border-radius: 8px;
+  padding: 13px 15px;
+  color: #c7dcfa;
+  font-size: 12px;
+  cursor: pointer;
+}
+.storozhenko-attestation input {
+  flex-shrink: 0;
+  margin: 3px 0 0;
+}
+.storozhenko-actions {
+  justify-content: flex-end;
+  margin-top: 21px;
+}
+.modal p.storozhenko-emergency {
+  border-top: 1px solid #2d3745;
+  margin: 22px 0 0;
+  padding-top: 13px;
+  color: #818fa3;
+  font-size: 10px;
+}
+.kotlin-challenge {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: calc(min(90vh, 850px) - 74px);
+}
+.kotlin-challenge > * {
+  flex-shrink: 0;
+}
+.kotlin-challenge .modal-symbol {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 13px;
+}
+.kotlin-challenge .eyebrow {
+  margin-bottom: 5px;
+}
+.kotlin-challenge h2 {
+  margin-bottom: 10px;
+}
+.kotlin-challenge > p {
+  margin-bottom: 13px;
+}
+.kotlin-question-form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.kotlin-question-prompt {
+  border: 1px solid #334056;
+  border-radius: 9px;
+  background: #111820;
+  color: #d8e3f2;
+  padding: 14px 16px;
+  margin: 8px 0 14px;
+  max-height: min(24vh, 200px);
+  overflow-y: auto;
+  flex-shrink: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.85;
+}
+.kotlin-answer-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 100px;
+  max-height: min(35vh, 360px);
+}
+.kotlin-options-title {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: #8c9cb3;
+  padding-bottom: 8px;
+}
+.kotlin-options-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #40516a #131a24;
+  padding: 3px 5px 3px 3px;
+}
+.kotlin-options-scroll:focus-visible,
+.kotlin-question-prompt:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+.kotlin-options {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.kotlin-options legend {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.kotlin-option {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid #303a48;
+  border-radius: 8px;
+  background: #151b23;
+  color: #a8b6c9;
+  padding: 12px 13px;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.kotlin-option:hover {
+  border-color: #4e6483;
+  background: #1b2635;
+}
+.kotlin-option.selected {
+  border-color: #548edc;
+  background: #1b2e47;
+  color: #dfecff;
+}
+.kotlin-option:has(input:focus-visible) {
+  outline: 2px solid #60a5fa;
+  outline-offset: 2px;
+}
+.kotlin-option input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+}
+.kotlin-option-letter {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #3a485b;
+  border-radius: 5px;
+  color: #8096b4;
+  font-size: 10px;
+}
+.kotlin-option.selected .kotlin-option-letter {
+  border-color: #5b91da;
+  background: #31547f;
+  color: #e5f0ff;
+}
+.kotlin-option-text {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.kotlin-option-check {
+  margin-top: 3px;
+  flex-shrink: 0;
+  color: #85b8ff;
+}
+.kotlin-options:disabled .kotlin-option {
+  cursor: wait;
+  opacity: 0.65;
+}
+.kotlin-feedback-slot {
+  min-height: 8px;
+  flex-shrink: 0;
+}
+.kotlin-question-form > .storozhenko-actions {
+  flex-shrink: 0;
+  margin-top: 14px;
+}
+.modal p.kotlin-feedback {
+  margin: 14px 0 0;
+  padding: 11px 13px;
+  border: 1px solid #5b4830;
+  border-radius: 7px;
+  background: #30271c;
+  color: #debe8a;
+  font-size: 11px;
+}
+.modal p.kotlin-loading {
+  color: #9ab9e3;
+  padding: 20px 0;
+}
+@media (max-width: 560px) {
+  .modal:has(.storozhenko-consent),
+  .modal:has(.kotlin-challenge) {
+    padding: 26px 20px;
+  }
+  .storozhenko-actions > button {
+    flex: 1;
+  }
+  .kotlin-challenge {
+    max-height: calc(min(90vh, 850px) - 54px);
+  }
+}
+@media (max-height: 780px) {
+  .kotlin-challenge .modal-symbol {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    margin-bottom: 9px;
+  }
+  .kotlin-challenge .modal-symbol svg {
+    width: 20px;
+    height: 20px;
+  }
+  .kotlin-challenge > p {
+    font-size: 11px;
+    margin-bottom: 9px;
+  }
+  .kotlin-question-prompt {
+    font-size: 11px;
+    line-height: 1.7;
+    padding: 11px 13px;
+    margin-bottom: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kotlin-option {
+    transition: none;
+  }
+}

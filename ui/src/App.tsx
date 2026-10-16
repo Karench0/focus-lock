@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   BarChart3,
+  BookOpen,
   Check,
   CheckCheck,
   ChevronRight,
@@ -26,11 +27,21 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import type { Application, Page, Profile, Settings, State } from "./types";
+import type {
+  Application,
+  Page,
+  Profile,
+  Settings,
+  State,
+  KotlinQuestion as Question,
+  StudyPlan,
+} from "./types";
 import { call } from "./api";
 import { copy } from "./i18n";
 import { CompactTimer } from "./CompactTimer";
 import { WindowBar } from "./WindowBar";
+import { StorozhenkoSettings, StorozhenkoConsent } from "./StorozhenkoSettings";
+import { KotlinChallenge } from "./KotlinChallenge";
 import { WebsiteResources } from "./WebsiteResources";
 
 const pages: Page[] = [
@@ -210,8 +221,19 @@ export function App() {
   const [search, setSearch] = useState("");
   const [domain, setDomain] = useState("");
   const [subdomains, setSubdomains] = useState(false);
+  const [studyPlan, setStudyPlan] = useState<StudyPlan>();
+  const [question, setQuestion] = useState<Question>();
+  const [quizFeedback, setQuizFeedback] = useState("");
+  const exerciseRef = useRef(false);
   const [modal, setModal] = useState<
-    "exit" | "close" | "preflight" | "profile" | "delete" | null
+    | "exit"
+    | "close"
+    | "preflight"
+    | "profile"
+    | "delete"
+    | "study"
+    | "quiz"
+    | null
   >(null);
   const [preflight, setPreflight] = useState<
     { pid: number; name: string; path: string }[]
@@ -224,6 +246,8 @@ export function App() {
   const t = copy[data?.settings.language || "ru"];
   const active =
     data?.session.state === "ACTIVE" || data?.session.state === "EXIT_PENDING";
+  const exercise = !!(active && data?.session.exercise);
+  exerciseRef.current = exercise;
   const pending = data?.session.state === "EXIT_PENDING";
   const profile =
     data?.profiles.find((p) => p.id === profileID) || data?.profiles[0];
@@ -247,12 +271,14 @@ export function App() {
   useEffect(() => {
     if (data?.session.state === "FINISHED")
       setModal((m) =>
-        m === "close" || m === "exit" || m === "preflight" ? null : m,
+        m === "close" || m === "exit" || m === "preflight" || m === "quiz"
+          ? null
+          : m,
       );
   }, [data?.session.state]);
   useEffect(() => {
     const off = window.runtime?.EventsOn("close-request", () =>
-      setModal("close"),
+      setModal(exerciseRef.current ? "quiz" : "close"),
     );
     return () => off?.();
   }, []);
@@ -285,6 +311,30 @@ export function App() {
       setWindowBusy(false);
     }
   };
+  useEffect(() => {
+    if (modal !== "quiz") return;
+    let cancelled = false;
+    setQuestion(undefined);
+    setQuizFeedback("");
+    void call<Question>("kotlinQuestion")
+      .then((q) => {
+        if (!cancelled) setQuestion(q);
+      })
+      .catch((e) => {
+        if (!cancelled) setQuizFeedback(String(e));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [modal]);
+  const openExit = () => {
+    if (exercise) {
+      void (async () => {
+        if (compact) await changeWindow(false);
+        setModal("quiz");
+      })();
+    } else setModal("exit");
+  };
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
     setError("");
@@ -297,6 +347,43 @@ export function App() {
       setBusy(false);
     }
   };
+  const prepareStudy = () =>
+    void run(async () => {
+      setStudyPlan(await call<StudyPlan>("prepareStorozhenko"));
+      setModal("study");
+    });
+  const beginStudy = () =>
+    void run(async () => {
+      if (!studyPlan) return;
+      await call("startStorozhenko", {
+        token: studyPlan.token,
+        self: "storozhenko",
+        confirmed: true,
+      });
+      setModal(null);
+      setPage("dashboard");
+      setDismissedSession("");
+    });
+  const answerQuestion = (option: number) =>
+    void run(async () => {
+      if (!question) return;
+      try {
+        const result = await call<{ correct: boolean }>("answerKotlin", {
+          token: question.token,
+          option,
+        });
+        if (result.correct) {
+          setModal(null);
+          setQuestion(undefined);
+          setNotice(t.studyCorrect);
+        } else {
+          setQuizFeedback(t.studyWrong);
+          setQuestion(await call<Question>("kotlinQuestion"));
+        }
+      } catch (e) {
+        setQuizFeedback(String(e));
+      }
+    });
   const selectProfile = (id: string) => {
     setProfileID(id);
     localStorage.setItem("profile", id);
@@ -734,9 +821,11 @@ export function App() {
           })
         }
         onStop={() =>
-          void run(async () => {
-            await call("requestExit");
-          })
+          exercise
+            ? openExit()
+            : void run(async () => {
+                await call("requestExit");
+              })
         }
         onCancel={() =>
           void run(async () => {
@@ -803,7 +892,7 @@ export function App() {
             <LockKeyhole size={15} />
             {t.local}
           </div>
-          <span className="version">v0.2.0 · Windows</span>
+          <span className="version">v0.3.0 · Windows</span>
         </div>
       </aside>
       <main>
@@ -947,38 +1036,53 @@ export function App() {
                           <div
                             className="digits"
                             role="timer"
-                            aria-label={t.remaining}
+                            aria-label={exercise ? t.studyElapsed : t.remaining}
                           >
                             {formatTime(
                               active
-                                ? data.session.remainingSeconds
+                                ? exercise
+                                  ? data.session.elapsedSeconds
+                                  : data.session.remainingSeconds
                                 : minutes * 60,
                             )}
                           </div>
-                          <span>{active ? t.remaining : t.duration}</span>
+                          <span>
+                            {active
+                              ? exercise
+                                ? t.studyElapsed
+                                : t.remaining
+                              : t.duration}
+                          </span>
                         </div>
                       </div>
                       {active ? (
                         <>
-                          <div className="session-progress">
-                            <span>
-                              {Math.round(data.session.progress * 100)}%
-                            </span>
-                            <div>
-                              <i
-                                style={{
-                                  width: `${data.session.progress * 100}%`,
-                                }}
-                              />
+                          {exercise ? (
+                            <div className="study-status">
+                              <BookOpen size={16} />
+                              <span>{t.studyHint}</span>
                             </div>
-                            <span>
-                              {Math.round(data.session.durationSeconds / 60)}{" "}
-                              {t.minutes}
-                            </span>
-                          </div>
+                          ) : (
+                            <div className="session-progress">
+                              <span>
+                                {Math.round(data.session.progress * 100)}%
+                              </span>
+                              <div>
+                                <i
+                                  style={{
+                                    width: `${data.session.progress * 100}%`,
+                                  }}
+                                />
+                              </div>
+                              <span>
+                                {Math.round(data.session.durationSeconds / 60)}{" "}
+                                {t.minutes}
+                              </span>
+                            </div>
+                          )}
                           <button
                             className="early-button"
-                            onClick={() => setModal("exit")}
+                            onClick={openExit}
                             disabled={pending}
                           >
                             <X size={15} />
@@ -1391,13 +1495,25 @@ export function App() {
                     <p>{t.privacyText}</p>
                     <p>{t.voluntary}</p>
                   </div>
+                  <StorozhenkoSettings
+                    language={data.settings.language}
+                    active={exercise}
+                    locked={!!active}
+                    busy={busy}
+                    onEnable={prepareStudy}
+                    onDisable={openExit}
+                  />
                   <div className="settings-bottom">
                     <span>{t.version}</span>
                     <button
                       className="secondary"
                       disabled={busy}
                       onClick={() =>
-                        active ? setModal("close") : void call("quit")
+                        active
+                          ? exercise
+                            ? openExit()
+                            : setModal("close")
+                          : void call("quit")
                       }
                     >
                       {t.quit}
@@ -1424,6 +1540,35 @@ export function App() {
         )}
       </AnimatePresence>
       <AnimatePresence>
+        {modal === "study" && studyPlan && (
+          <Modal label={t.studyConsent} onClose={() => setModal(null)}>
+            <StorozhenkoConsent
+              language={data.settings.language}
+              busy={busy}
+              blocked={studyPlan.blocked}
+              browserReady={studyPlan.browserReady}
+              onConfirm={beginStudy}
+              onCancel={() => setModal(null)}
+            />
+            {error && (
+              <p className="kotlin-feedback" role="alert">
+                {error}
+              </p>
+            )}
+          </Modal>
+        )}
+        {modal === "quiz" && (
+          <Modal label={t.studyQuestion} onClose={() => setModal(null)}>
+            <KotlinChallenge
+              language={data.settings.language}
+              question={question}
+              busy={busy}
+              feedback={quizFeedback}
+              onAnswer={answerQuestion}
+              onCancel={() => setModal(null)}
+            />
+          </Modal>
+        )}
         {modal === "exit" && (
           <Modal label={t.exitTitle} onClose={() => setModal(null)}>
             <div className="modal-symbol">
@@ -1495,10 +1640,7 @@ export function App() {
             >
               {t.tray}
             </button>
-            <button
-              className="text-button full"
-              onClick={() => setModal("exit")}
-            >
+            <button className="text-button full" onClick={openExit}>
               {t.closeSession}
             </button>
           </Modal>

@@ -1,0 +1,80 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #0d0f12;
+  color: #f1f3f5;
+  font:
+    14px/1.7 system-ui,
+    sans-serif;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+}
+main {
+  max-width: 590px;
+  padding: 50px;
+}
+h1 {
+  font-size: 32px;
+  line-height: 1.25;
+  letter-spacing: -1px;
+  margin: 17px 0 20px;
+  font-weight: 600;
+}
+p {
+  color: #949ca8;
+}
+button {
+  background: #3b82f6;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  padding: 12px 20px;
+  font: inherit;
+  cursor: pointer;
+  margin: 17px 0 28px;
+}
+button:hover {
+  background: #60a5fa;
+}
+button:focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+small {
+  display: block;
+  color: #667386;
+  font-size: 11px;
+}
+.eyebrow {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: #7d94b8;
+}
+.mark {
+  color: #3b82f6;
+  font-size: 65px;
+  line-height: 1;
+  margin-bottom: 35px;
+}
+.popup {
+  min-height: 0;
+  display: block;
+  width: 300px;
+  background: #111418;
+}
+.popup main {
+  padding: 23px;
+}
+.popup h1 {
+  font-size: 20px;
+}
+.popup p {
+  font-size: 12px;
+}
+.popup small {
+  margin-top: 18px;
+}

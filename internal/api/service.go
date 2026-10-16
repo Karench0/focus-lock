@@ -154,19 +154,31 @@ func (s *Service) monitor(snap session.Snapshot) {
 		if !running(s.engine.Snapshot()) {
 			break
 		}
-		if err = applications.Terminate(p); err != nil {
-			s.failed[p.PID] = p.Created
+		if err = s.recordTermination(p, applications.Terminate(p)); err != nil {
 			s.lastError = fmt.Sprintf("Could not close %s; it may require elevated rights.", p.Name)
 			if snap.Exercise {
 				s.engine.Stop("monitor_error")
 				s.flush()
 				break
 			}
-		} else {
-			s.engine.AddBlock(false)
 		}
 	}
 }
+
+// Both startup and monitoring exempt processes protected by Windows. Remember
+// the exact instance so polling does not repeatedly attempt the denied action.
+func (s *Service) recordTermination(p applications.Process, err error) error {
+	if err != nil {
+		s.failed[p.PID] = p.Created
+		if applications.IsProtectedProcessError(err) {
+			return nil
+		}
+		return err
+	}
+	s.engine.AddBlock(false)
+	return nil
+}
+
 func (s *Service) State() (State, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()

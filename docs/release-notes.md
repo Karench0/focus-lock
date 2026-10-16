@@ -1,4 +1,6 @@
-# Focus Lock 0.3.0 — Windows preview
+# Focus Lock 0.3.1 — Windows preview
+
+Protected processes no longer cancel exercise startup or monitoring. DefenderSessionHelper, elevated apps and processes without termination permission are exempt; an access denial after the review skips that process and continues closing the remaining ordinary applications. No administrator permission is requested. Other unexpected failures are still reported.
 
 This version adds the explicitly confirmed personal Storozhenko Kotlin exercise. Settings has a timed triple-activation circle. The exercise temporarily replaces website/app preferences, opens official Kotlin docs in the default supported browser, and ends after one correct eight-option Kotlin question. It preserves saved preferences and never auto-starts after restarting the app. Update/reload the bundled extension before use.
 

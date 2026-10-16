@@ -177,11 +177,17 @@ func (s *Service) StartStorozhenko(token, self string, confirmed bool) error {
 		if err = desktop.OpenKotlinDocs(); err != nil {
 			return fail(err)
 		}
-		for _, pr := range blocked {
-			if err = applications.Terminate(pr); err != nil {
-				return fail(fmt.Errorf("could not close %s; exercise cancelled: %w", pr.Name, err))
-			}
-			s.engine.AddBlock(false)
+		if err = s.closeStudyApplications(blocked, applications.Terminate); err != nil {
+			return fail(err)
+		}
+	}
+	return nil
+}
+
+func (s *Service) closeStudyApplications(blocked []applications.Process, terminate func(applications.Process) error) error {
+	for _, pr := range blocked {
+		if err := s.recordTermination(pr, terminate(pr)); err != nil {
+			return fmt.Errorf("could not close %s; exercise cancelled: %w", pr.Name, err)
 		}
 	}
 	return nil

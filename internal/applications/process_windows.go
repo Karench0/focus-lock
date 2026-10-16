@@ -19,6 +19,24 @@ var user32 = windows.NewLazySystemDLL("user32.dll")
 var kernel32 = windows.NewLazySystemDLL("kernel32.dll")
 var isCritical = kernel32.NewProc("IsProcessCritical")
 
+var ErrProcessProtected = errors.New("process is protected")
+
+// Protection can change between the snapshot and termination (including AV
+// self-protection). An access denial is an exemption, never a reason to elevate.
+func IsProtectedProcessError(err error) bool {
+	return errors.Is(err, ErrProcessProtected) || errors.Is(err, windows.ERROR_ACCESS_DENIED) || errors.Is(err, windows.ERROR_PRIVILEGE_NOT_HELD)
+}
+
+func protectedProcessName(name string) bool {
+	switch strings.ToLower(name) {
+	case "taskmgr.exe", "explorer.exe", "narrator.exe", "magnify.exe", "osk.exe", "nvda.exe", "jfw.exe",
+		"msmpeng.exe", "nissrv.exe", "securityhealthservice.exe", "defendersessionhelper.exe",
+		"focuslock.exe", "focuslock-host.exe", "msedgewebview2.exe":
+		return true
+	}
+	return false
+}
+
 // Windows callbacks cannot be freed. Allocate one for the lifetime of the app,
 // rather than leaking a callback on each enforcement snapshot.
 var visibleMu sync.Mutex
@@ -132,7 +150,8 @@ func Inspect(pid, parent uint32) (Process, error) {
 	if err != nil || !u.User.Sid.Equals(me.User.Sid) {
 		return p, nil
 	}
-	if tok.IsElevated() {
+	var elevated, elevationSize uint32
+	if windows.GetTokenInformation(tok, windows.TokenElevation, (*byte)(unsafe.Pointer(&elevated)), uint32(unsafe.Sizeof(elevated)), &elevationSize) != nil || elevated != 0 {
 		return p, nil
 	}
 	var uiAccess, returned uint32
@@ -156,14 +175,19 @@ func Inspect(pid, parent uint32) (Process, error) {
 		}
 	}
 	// Fail safe for accessibility, security agents and the app's own runtime.
-	for _, name := range []string{"taskmgr.exe", "explorer.exe", "narrator.exe", "magnify.exe", "osk.exe", "nvda.exe", "jfw.exe", "msmpeng.exe", "nissrv.exe", "securityhealthservice.exe", "focuslock.exe", "focuslock-host.exe", "msedgewebview2.exe"} {
-		if strings.EqualFold(p.Name, name) {
-			return p, nil
-		}
+	if protectedProcessName(p.Name) {
+		return p, nil
 	}
 	if pid == uint32(os.Getpid()) {
 		return p, nil
 	}
+	// Query access does not imply termination access. Exclude protected apps
+	// before showing the closure review, without attempting to terminate them.
+	terminationHandle, err := windows.OpenProcess(windows.PROCESS_TERMINATE|windows.PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
+	if err != nil {
+		return p, nil
+	}
+	windows.CloseHandle(terminationHandle)
 	p.Safe = false
 	return p, nil
 }
@@ -171,6 +195,9 @@ func Inspect(pid, parent uint32) (Process, error) {
 // Terminate rechecks identity and safety on the same handle used to terminate.
 // A recycled PID must never authorize killing an unrelated process.
 func Terminate(expected Process) error {
+	if expected.Safe {
+		return fmt.Errorf("%w: %s", ErrProcessProtected, expected.Name)
+	}
 	h, err := windows.OpenProcess(windows.PROCESS_TERMINATE|windows.PROCESS_QUERY_LIMITED_INFORMATION, false, expected.PID)
 	if err != nil {
 		return err
@@ -188,7 +215,7 @@ func Terminate(expected Process) error {
 		return err
 	}
 	if p.Safe || !strings.EqualFold(p.Path, expected.Path) {
-		return fmt.Errorf("process is protected: %s", expected.Name)
+		return fmt.Errorf("%w: %s", ErrProcessProtected, expected.Name)
 	}
 	return windows.TerminateProcess(h, 0)
 }

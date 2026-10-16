@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1 — 2026-10-17 (prerelease)
+
+- Exempt DefenderSessionHelper and Defender platform directories, elevated processes, and processes without termination permission from the closure review.
+- An access-denied or protected-process result during exercise startup or monitoring now skips that process and continues closing ordinary disallowed applications. The skipped instance is remembered without counting it as closed. Unexpected failures still report an error.
+- Regression coverage for protection changes after consent, continued Steam/Telegram closure, and owned disposable-process safety.
+
 ## 0.3.0 — 2026-10-16 (prerelease)
 
 - Hidden personal Storozhenko mode behind a timed triple activation in Settings, with explicit identity/consent confirmation.

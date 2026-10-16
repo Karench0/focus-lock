@@ -4,10 +4,14 @@ package applications
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"testing"
 	"time"
+
+	"golang.org/x/sys/windows"
 )
 
 func TestProcessFixture(t *testing.T) {
@@ -35,6 +39,14 @@ func TestOnlyOwnedDisposableFixtureIsTerminated(t *testing.T) {
 	if Allowed(p, nil, nil, true, nil) {
 		t.Fatal("unlisted process allowed")
 	}
+	protected := p
+	protected.Safe = true
+	if err := Terminate(protected); !errors.Is(err, ErrProcessProtected) {
+		t.Fatalf("protected snapshot was not refused: %v", err)
+	}
+	if _, err := Inspect(p.PID, p.Parent); err != nil {
+		t.Fatalf("protected fixture was terminated: %v", err)
+	}
 	stale := p
 	stale.Created++
 	if Terminate(stale) == nil {
@@ -42,5 +54,31 @@ func TestOnlyOwnedDisposableFixtureIsTerminated(t *testing.T) {
 	}
 	if err = Terminate(p); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestProtectedProcessErrors(t *testing.T) {
+	for _, err := range []error{ErrProcessProtected, windows.ERROR_ACCESS_DENIED, windows.ERROR_PRIVILEGE_NOT_HELD} {
+		if !IsProtectedProcessError(fmt.Errorf("wrapped: %w", err)) {
+			t.Errorf("protection error not recognized: %v", err)
+		}
+	}
+	for _, err := range []error{nil, errors.New("Access is denied."), windows.ERROR_INVALID_PARAMETER, errors.New("process identity changed")} {
+		if IsProtectedProcessError(err) {
+			t.Errorf("unrelated error treated as protection: %v", err)
+		}
+	}
+}
+
+func TestSecurityProcessNamesStayExempt(t *testing.T) {
+	for _, name := range []string{"DefenderSessionHelper.exe", "DEFENDERSESSIONHELPER.EXE", "MsMpEng.exe", "Taskmgr.exe"} {
+		if !protectedProcessName(name) {
+			t.Errorf("missing security exemption: %s", name)
+		}
+	}
+	for _, name := range []string{"steam.exe", "Telegram.exe", "dota2.exe", "notdefendersessionhelper.exe"} {
+		if protectedProcessName(name) {
+			t.Errorf("ordinary app exempted: %s", name)
+		}
 	}
 }

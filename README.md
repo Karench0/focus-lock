@@ -112,9 +112,9 @@ Build the complete distributable (includes the native host and extension):
 
 ```powershell
 ./scripts/build.ps1
-./scripts/package.ps1 -Version 0.3.0
+./scripts/package.ps1 -Version 0.3.1
 # Optional, with Inno Setup 6 installed:
-./scripts/package.ps1 -Version 0.3.0 -Installer
+./scripts/package.ps1 -Version 0.3.1 -Installer
 ```
 
 The app is at `build/bin/FocusLock.exe`; release assets are under `build/release/`. `wails build` alone only builds the GUI, so use the script for a complete package. In development, register a host built beside the GUI if you test Native Messaging.
@@ -182,5 +182,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), open a focused issue, and include repro
 In Settings, activate the small circle near the bottom-right three times within 1.6 seconds (each gap no more than 0.8 seconds). The cursor deliberately stays ordinary. The extra panel contains **Storozhenko mode**. This personal mode requires the explicit “I am Storozhenko” confirmation; the app does not infer or verify a person's identity from their account name.
 
 Save work before confirming: the review lists unrelated apps that will close; already-open unrelated HTTP(S) tabs are replaced with the blocked page. Only the default Chrome/Edge with the updated connected extension and installed IntelliJ IDEA/Android Studio are allowed, plus existing system/security/accessibility exemptions. The study website is `kotlinlang.org`, with fonts from `resources.jetbrains.com` permitted only as site resources. YouTube/TikTok and Steam/Dota are outside this temporary policy, even if an ordinary profile allows them.
+
+Elevated apps and processes without termination permission are skipped. If Windows or an antivirus denies closure after the review, that process is exempted for its current instance and the exercise continues closing ordinary disallowed apps. This does not request administrator privileges or count the skipped process as closed.
 
 The default browser opens https://kotlinlang.org/docs/home.html. A correct answer to one of 20 middle-level Russian Kotlin questions (eight shuffled options) finishes the exercise. A wrong answer leaves it active and offers a different question. Normal profiles/settings remain intact. No hidden mode survives an app restart. Task Manager remains an emergency exit; this is a voluntary local focus tool.

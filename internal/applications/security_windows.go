@@ -41,6 +41,11 @@ func securityDirectories() []string {
 			}
 		}
 		vendors := []string{"Windows Defender", "Microsoft Defender", "Kaspersky Lab", "Kaspersky", "ESET", "AVAST Software", "AVG", "Bitdefender", "Norton", "NortonLifeLock", "Symantec", "McAfee", "Malwarebytes", "Trend Micro", "Sophos", "CrowdStrike", "SentinelOne", "Sentinel Agent", "F-Secure", "Panda Security", "Webroot", "COMODO", "DrWeb", "Doctor Web"}
+		if base := os.Getenv("ProgramData"); base != "" {
+			for _, vendor := range []string{"Windows Defender", "Microsoft Defender"} {
+				securityPaths = append(securityPaths, strings.ToLower(filepath.Join(base, "Microsoft", vendor))+`\`)
+			}
+		}
 		for _, base := range []string{os.Getenv("ProgramFiles"), os.Getenv("ProgramFiles(x86)")} {
 			if base == "" {
 				continue

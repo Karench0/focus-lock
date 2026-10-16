@@ -892,7 +892,7 @@ export function App() {
             <LockKeyhole size={15} />
             {t.local}
           </div>
-          <span className="version">v0.3.0 · Windows</span>
+          <span className="version">v0.3.1 · Windows</span>
         </div>
       </aside>
       <main>

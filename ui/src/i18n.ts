@@ -168,7 +168,7 @@ export const copy = {
     clearError: "Скрыть сообщение",
     quit: "Закрыть приложение",
     dry: "Режим разработки",
-    version: "Предварительная версия 0.3.0",
+    version: "Предварительная версия 0.3.1",
     browserWarning:
       "Разрешайте браузер после установки расширения. Только проверенный процесс браузера допускается в строгую сессию.",
   },
@@ -340,7 +340,7 @@ export const copy = {
     clearError: "Dismiss message",
     quit: "Quit application",
     dry: "Development mode",
-    version: "Preview release 0.3.0",
+    version: "Preview release 0.3.1",
     browserWarning:
       "Install the extension before allowing a browser. Only verified browser processes can enter a strict session.",
   },

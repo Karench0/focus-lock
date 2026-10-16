@@ -85,9 +85,10 @@ func (a *App) beforeClose(ctx context.Context) bool {
 		return false
 	}
 	if a.service.Active() {
-		runtime.WindowShow(ctx)
+		// WM_CLOSE can invoke this on the UI thread. Return immediately before
+		// calling window APIs which may synchronously dispatch onto that thread.
 		go func() {
-			_ = a.setCompact(false, true)
+			a.showFullWindow()
 			runtime.EventsEmit(ctx, "close-request")
 		}()
 		return true

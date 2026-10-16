@@ -78,3 +78,5 @@ UI E2E covers entering/expanding the mini timer, confirmation without stopping, 
 For manual native checks, use a separate `FOCUS_LOCK_DATA_DIR` and launch `FocusLock.exe --window-preview`. This diagnostic mode disables process/website enforcement and bypasses the production instance lock; it is for UI checks only. Check native dragging, maximise → compact → restore, tray hide/Open, Alt+F4 while compact, and 100/125/150% DPI. Automated tests do not replace the remaining hardware/multi-monitor gates above.
 
 Native Windows preview results: compact resizing reached 420 × 180; pointer dragging moved the window from (958, 189) to (1146, 288) at the current 125% display scale; expanding restored (958, 189) and the original size. Maximise/compact/expand was also checked. The session continued throughout. Mixed-DPI physical monitor changes remain a manual compatibility check.
+
+Alt+F4 while compact was verified in the native preview: the window expands and shows the existing active-session close dialog. Window API calls are dispatched after the close callback returns to avoid blocking the Windows UI thread.

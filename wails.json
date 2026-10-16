@@ -1,0 +1,12 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "Focus Lock",
+  "outputfilename": "FocusLock",
+  "frontend:dir": "ui",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {"name": "Karen Mkrtchyan", "email": ""},
+  "info": {"companyName": "Focus Lock contributors", "productName": "Focus Lock", "productVersion": "0.1.0", "copyright": "Copyright © 2026 Karen Mkrtchyan", "comments": "Voluntary focus for Windows"}
+}

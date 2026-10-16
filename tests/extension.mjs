@@ -122,7 +122,7 @@ try {
   ];
   const launch = () =>
     chromium.launchPersistentContext(path.join(scratch, "profile"), {
-      channel: "chromium",
+      channel: process.env.FOCUS_LOCK_TEST_BROWSER || "chromium",
       headless: true,
       env,
       args,

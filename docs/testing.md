@@ -15,6 +15,7 @@ Recorded on 2026-10-16 on Windows 11 Pro, build 10.0.26300. This report distingu
 - Playwright ran the compiled GUI in explicit diagnostic-preview mode against real SQLite and Go timers: onboarding, profile edits, website edits, active session, early exit, cancellation, a real 15-second delay, and a real 60-second natural completion. It checked statistics and recorded six UI screenshots with no page errors. **Preview mode intentionally disables process enforcement.**
 - An isolated Chrome for Testing 151.0.7922.34 profile loaded the actual unpacked extension. A test-only Go bridge fixture used the production named-pipe/authentication implementation and the compiled native host. The browser acknowledged rules, allowed a listed localhost page, redirected an unlisted loopback page, blocked an unlisted network subresource, and passed blocklist checks. Killing the bridge fixture removed browser rules and restored access in **59 ms in the recorded run**. This is an observation, not a timing guarantee. Restarting the browser without the app left no session rules.
 - The extension test temporarily registered its native host under HKCU and restored the previous entries in `finally`. It used a unique pipe suffix and never controlled desktop applications.
+- The same actual navigation, blocklist, native-channel, crash cleanup and browser-restart checks also passed in an isolated Microsoft Edge **155.0.4283.45** profile. The recorded restoration after killing the bridge fixture was 177 ms in that Edge run.
 - `npm audit` found zero known vulnerabilities after the dependency updates used for the recorded build.
 
 ## Required scenario matrix
@@ -48,6 +49,9 @@ npm run ui
 cd ..
 go build -o build/bin/bridge-fixture.exe ./internal/bridge/testdata/server
 cd tests
+npm run extension
+# Also test the installed Microsoft Edge in an isolated profile:
+$env:FOCUS_LOCK_TEST_BROWSER='msedge'
 npm run extension
 ```
 

@@ -55,6 +55,11 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Fixture build failed' }
           Push-Location tests
           try { npm run extension; if ($LASTEXITCODE -ne 0) { throw 'Extension integration failed' } } finally { Pop-Location }
+      - name: Native Messaging in Microsoft Edge
+        working-directory: tests
+        env:
+          FOCUS_LOCK_TEST_BROWSER: msedge
+        run: npm run extension
       - uses: actions/upload-artifact@v4
         with:
           name: FocusLock-windows-amd64

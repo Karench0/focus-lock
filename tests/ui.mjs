@@ -121,6 +121,23 @@ try {
   await screenshot("applications");
   await page.getByRole("button", { name: "Websites", exact: true }).click();
   await page.getByRole("heading", { name: "Websites", exact: true }).waitFor();
+  assert.equal(
+    (await api("state")).profiles
+      .find((p) => p.id === profile.id)
+      .websites.find((s) => s.domain === "github.com").resources?.length || 0,
+    0,
+  );
+  await page
+    .getByRole("button", { name: "Allow GitHub resources", exact: true })
+    .click();
+  await delay(700);
+  assert.ok(
+    (await api("state")).profiles
+      .find((p) => p.id === profile.id)
+      .websites.find((s) => s.domain === "github.com")
+      .resources.includes("github.githubassets.com"),
+  );
+  console.log("PASS explicit GitHub resource approval persisted");
   await screenshot("websites");
   await page.getByRole("button", { name: "Profiles", exact: true }).click();
   await page.getByRole("button", { name: "New profile", exact: true }).click();

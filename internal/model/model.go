@@ -8,8 +8,9 @@ type Application struct {
 }
 
 type Website struct {
-	Domain     string `json:"domain"`
-	Subdomains bool   `json:"subdomains"`
+	Domain     string   `json:"domain"`
+	Subdomains bool     `json:"subdomains"`
+	Resources  []string `json:"resources,omitempty"`
 }
 
 type Profile struct {

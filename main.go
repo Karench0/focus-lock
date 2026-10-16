@@ -16,6 +16,7 @@ import (
 	"github.com/Karench0/focus-lock/internal/api"
 	"github.com/Karench0/focus-lock/internal/applications"
 	"github.com/Karench0/focus-lock/internal/bridge"
+	"github.com/Karench0/focus-lock/internal/desktop"
 	"github.com/Karench0/focus-lock/internal/model"
 	"github.com/Karench0/focus-lock/internal/storage"
 	"github.com/getlantern/systray"
@@ -161,7 +162,7 @@ func (a *App) Call(command, payload string) (string, error) {
 		if a.context() == nil {
 			return "", fmt.Errorf("requires desktop app")
 		}
-		runtime.BrowserOpenURL(a.context(), filepath.Join(a.dir, "browser-extension"))
+		err = desktop.OpenExtensionFolder(a.dir)
 	case "tray":
 		if a.context() == nil {
 			return "", fmt.Errorf("requires desktop app")

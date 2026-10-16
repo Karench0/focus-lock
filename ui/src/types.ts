@@ -7,6 +7,7 @@ export interface Application {
 export interface Website {
   domain: string;
   subdomains: boolean;
+  resources?: string[];
 }
 export interface Profile {
   id: string;

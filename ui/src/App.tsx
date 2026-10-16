@@ -29,6 +29,7 @@ import {
 import type { Application, Page, Profile, Settings, State } from "./types";
 import { call } from "./api";
 import { copy } from "./i18n";
+import { WebsiteResources } from "./WebsiteResources";
 
 const pages: Page[] = [
   "dashboard",
@@ -537,28 +538,46 @@ export function App() {
           />
         ) : (
           profile.websites.map((w) => (
-            <div className="site-row" key={w.domain}>
-              <div className="site-icon">
-                <Globe2 size={18} />
+            <div className="site-entry" key={w.domain}>
+              <div className="site-row">
+                <div className="site-icon">
+                  <Globe2 size={18} />
+                </div>
+                <div className="row-body">
+                  <strong>{w.domain}</strong>
+                  <span>{w.subdomains ? t.subdomains : t.exactDomain}</span>
+                </div>
+                <button
+                  aria-label={`${t.remove} ${w.domain}`}
+                  className="icon-button"
+                  disabled={busy || active}
+                  onClick={() =>
+                    updateProfile({
+                      websites: profile.websites.filter(
+                        (x) => x.domain !== w.domain,
+                      ),
+                    })
+                  }
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
-              <div className="row-body">
-                <strong>{w.domain}</strong>
-                <span>{w.subdomains ? t.subdomains : "Exact domain"}</span>
-              </div>
-              <button
-                aria-label={`${t.remove} ${w.domain}`}
-                className="icon-button"
-                disabled={busy || active}
-                onClick={() =>
-                  updateProfile({
-                    websites: profile.websites.filter(
-                      (x) => x.domain !== w.domain,
-                    ),
-                  })
-                }
-              >
-                <Trash2 size={16} />
-              </button>
+              {profile.mode === "strict" && (
+                <WebsiteResources
+                  site={w}
+                  language={data?.settings.language || "ru"}
+                  disabled={busy || !!active}
+                  onSave={(resources) =>
+                    updateProfile({
+                      websites: profile.websites.map((site) =>
+                        site.domain === w.domain
+                          ? { ...site, resources }
+                          : site,
+                      ),
+                    })
+                  }
+                />
+              )}
             </div>
           ))
         )}
@@ -708,7 +727,7 @@ export function App() {
             <LockKeyhole size={15} />
             {t.local}
           </div>
-          <span className="version">v0.1.0 · Windows</span>
+          <span className="version">v0.1.1 · Windows</span>
         </div>
       </aside>
       <main>

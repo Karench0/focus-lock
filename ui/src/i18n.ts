@@ -48,6 +48,13 @@ export const copy = {
     add: "Добавить",
     domain: "Домен без https://",
     subdomains: "Разрешать поддомены",
+    exactDomain: "Точный домен",
+    resourceDomains: "Домены ресурсов",
+    resourceHint:
+      "Если сайт отображается без оформления, добавьте точные домены его CSS, JavaScript, изображений или API. Они будут доступны только как ресурсы этого сайта; переходы и встроенные страницы останутся заблокированы. Изменения применяются со следующей сессии.",
+    githubResourcesHint:
+      "GitHub загружает оформление и скрипты с github.githubassets.com, а изображения — с githubusercontent.com. Разрешите перечисленные домены ресурсов явно:",
+    addGithubResources: "Разрешить ресурсы GitHub",
     siteEmpty: "Список сайтов пуст",
     siteEmptyHint: "В строгом режиме все HTTP(S)-сайты будут недоступны.",
     dependencies:
@@ -140,7 +147,7 @@ export const copy = {
     clearError: "Скрыть сообщение",
     quit: "Закрыть приложение",
     dry: "Режим разработки",
-    version: "Предварительная версия 0.1.0",
+    version: "Предварительная версия 0.1.1",
     browserWarning:
       "Разрешайте браузер после установки расширения. Только проверенный процесс браузера допускается в строгую сессию.",
   },
@@ -193,6 +200,13 @@ export const copy = {
     add: "Add",
     domain: "Domain without https://",
     subdomains: "Include subdomains",
+    exactDomain: "Exact domain",
+    resourceDomains: "Resource domains",
+    resourceHint:
+      "If a page loads without styling, add the exact domains of its CSS, JavaScript, images or API. They are allowed only as this site's resources; direct navigation and embedded pages stay blocked. Changes apply to the next session.",
+    githubResourcesHint:
+      "GitHub loads styles and scripts from github.githubassets.com and images from githubusercontent.com. Explicitly approve the listed resource domains:",
+    addGithubResources: "Allow GitHub resources",
     siteEmpty: "No websites yet",
     siteEmptyHint: "Strict mode will block all HTTP(S) websites.",
     dependencies:
@@ -284,7 +298,7 @@ export const copy = {
     clearError: "Dismiss message",
     quit: "Quit application",
     dry: "Development mode",
-    version: "Preview release 0.1.0",
+    version: "Preview release 0.1.1",
     browserWarning:
       "Install the extension before allowing a browser. Only verified browser processes can enter a strict session.",
   },

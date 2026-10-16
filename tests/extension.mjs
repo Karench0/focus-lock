@@ -47,11 +47,36 @@ const saved = [];
 let context;
 let child;
 const destination = http.createServer((req, res) => {
+  res.setHeader("Cache-Control", "no-store");
   res.setHeader("Content-Type", "text/html");
   res.setHeader("Access-Control-Allow-Origin", "*");
   if (req.url === "/favicon.ico") {
     res.writeHead(204);
     res.end();
+    return;
+  }
+  if (req.url === "/style.css") {
+    res.setHeader("Content-Type", "text/css");
+    res.end("body { background-color: rgb(17, 34, 51); }");
+    return;
+  }
+  if (req.url === "/app.js") {
+    res.setHeader("Content-Type", "application/javascript");
+    res.end("window.resourceScriptLoaded = true;");
+    return;
+  }
+  if (req.url === "/image.svg") {
+    res.setHeader("Content-Type", "image/svg+xml");
+    res.end(
+      '<svg xmlns="http://www.w3.org/2000/svg" width="2" height="2"><rect width="2" height="2" fill="blue"/></svg>',
+    );
+    return;
+  }
+  if (req.url === "/resource-page") {
+    const cdn = `http://127.0.0.1:${destination.address().port}`;
+    res.end(
+      `<!doctype html><title>Resource dependency fixture</title><link rel="stylesheet" href="${cdn}/style.css"><script src="${cdn}/app.js"></script><img id="cdn-image" src="${cdn}/image.svg"><h1>Resource test</h1>`,
+    );
     return;
   }
   res.end(
@@ -239,6 +264,94 @@ try {
   console.log(
     "PASS strict mode also blocks non-allowlisted network subresources",
   );
+  // Reproduce a GitHub-like page whose assets are on a separate domain.
+  await page.goto(`http://localhost:${port}/resource-page`);
+  assert.equal(await page.evaluate(() => !!window.resourceScriptLoaded), false);
+  rules.sessionId = "c".repeat(32);
+  rules.websites = [
+    { domain: "localhost", subdomains: false, resources: ["127.0.0.1"] },
+  ];
+  await api(rules);
+  await until(async () =>
+    (await api()).some((s) => s.applied === rules.sessionId),
+  );
+  await page.reload();
+  assert.equal(
+    await page.evaluate(() => getComputedStyle(document.body).backgroundColor),
+    "rgb(17, 34, 51)",
+  );
+  assert.equal(await page.evaluate(() => window.resourceScriptLoaded), true);
+  assert.equal(
+    await page
+      .locator("#cdn-image")
+      .evaluate((img) => img.complete && img.naturalWidth === 2),
+    true,
+  );
+  const match = async (type, initiator) =>
+    worker.evaluate(
+      async ({ url, type, initiator }) =>
+        chrome.declarativeNetRequest.testMatchOutcome({ url, type, initiator }),
+      { url: blocked, type, initiator },
+    );
+  assert.ok(
+    (await match("stylesheet", `http://localhost:${port}`)).matchedRules.some(
+      (r) => r.ruleId === 1001,
+    ),
+  );
+  assert.ok(
+    (await match("stylesheet", "http://other.test")).matchedRules.some(
+      (r) => r.ruleId === 2,
+    ),
+  );
+  assert.ok(
+    (await match("sub_frame", `http://localhost:${port}`)).matchedRules.some(
+      (r) => r.ruleId === 2,
+    ),
+  );
+  await page.goto(blocked);
+  assert.match(page.url(), /blocked.html$/);
+  console.log(
+    "PASS cross-domain CSS, JavaScript and images load only after explicit approval; unrelated origins, frames and direct CDN navigation remain blocked",
+  );
+  if (process.env.FOCUS_LOCK_LIVE_GITHUB === "1") {
+    rules.sessionId = "d".repeat(32);
+    rules.websites = [
+      {
+        domain: "github.com",
+        subdomains: false,
+        resources: [
+          "github.githubassets.com",
+          "avatars.githubusercontent.com",
+          "user-images.githubusercontent.com",
+          "private-user-images.githubusercontent.com",
+        ],
+      },
+    ];
+    await api(rules);
+    await until(async () =>
+      (await api()).some((s) => s.applied === rules.sessionId),
+    );
+    const styles = [];
+    page.on("response", (r) => {
+      if (
+        r.request().resourceType() === "stylesheet" &&
+        new URL(r.url()).hostname === "github.githubassets.com"
+      )
+        styles.push(r.status());
+    });
+    await page.goto("https://github.com", {
+      waitUntil: "load",
+      timeout: 60000,
+    });
+    assert.ok(
+      styles.some((status) => status === 200),
+      "GitHub CDN stylesheet must actually load",
+    );
+    assert.ok(await page.evaluate(() => document.styleSheets.length > 0));
+    console.log(
+      `PASS live GitHub: ${styles.filter((status) => status === 200).length} CDN stylesheets loaded`,
+    );
+  }
   rules.sessionId = "b".repeat(32);
   rules.mode = "blocklist";
   rules.websites = [{ domain: "127.0.0.1", subdomains: false }];

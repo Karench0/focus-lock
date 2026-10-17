@@ -220,12 +220,12 @@
   color: #d8e3f2;
   padding: 14px 16px;
   margin: 8px 0 14px;
-  max-height: min(24vh, 200px);
+  max-height: min(30vh, 280px);
   overflow-y: auto;
   flex-shrink: 0;
-  white-space: pre-wrap;
+  white-space: normal;
   overflow-wrap: anywhere;
-  font-family: "Cascadia Code", Consolas, monospace;
+  font-family: inherit;
   font-size: 12px;
   line-height: 1.85;
 }
@@ -339,6 +339,66 @@
   flex-shrink: 0;
   color: #85b8ff;
 }
+.kotlin-prose {
+  white-space: pre-wrap;
+}
+.kotlin-code {
+  margin: 13px 0;
+  border: 1px solid #354254;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #101720;
+  text-align: left;
+}
+.kotlin-code-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  background: #192331;
+  border-bottom: 1px solid #2b3746;
+  color: #9cabc0;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+.kotlin-code-dot {
+  width: 6px;
+  height: 6px;
+  background: #b59bff;
+  border-radius: 50%;
+}
+.kotlin-code pre {
+  margin: 0;
+  padding: 12px 14px;
+  overflow-x: auto;
+  white-space: pre;
+  tab-size: 4;
+  color: #d8e2ef;
+  font: 12px/1.75 "Cascadia Code", Consolas, "Courier New", monospace;
+  font-variant-ligatures: none;
+  text-align: left;
+}
+.kotlin-code pre:focus-visible {
+  outline: 2px solid #77a8ed;
+  outline-offset: -2px;
+}
+.kotlin-code pre code {
+  font: inherit;
+}
+.kotlin-inline {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: #263244;
+  color: #c8bbf5;
+  font-family: "Cascadia Code", Consolas, monospace;
+}
+.kt-keyword, .kt-annotation { color: #c3a6ff; }
+.kt-string { color: #a7cf91; }
+.kt-number { color: #e3b17b; }
+.kt-type { color: #88c9dc; }
+.kt-function { color: #92bdf5; }
+.kt-comment { color: #8292a7; }
 .kotlin-options:disabled .kotlin-option {
   cursor: wait;
   opacity: 0.65;

@@ -16,7 +16,7 @@ import (
 )
 
 func TestProtectedProcessDoesNotInterruptRemainingStudyClosures(t *testing.T) {
-	for _, denial := range []error{windows.ERROR_ACCESS_DENIED, windows.ERROR_PRIVILEGE_NOT_HELD, applications.ErrProcessProtected} {
+	for _, denial := range []error{windows.ERROR_ACCESS_DENIED, windows.ERROR_PRIVILEGE_NOT_HELD, applications.ErrProcessProtected, applications.ErrProcessGone} {
 		t.Run(denial.Error(), func(t *testing.T) {
 			s := &Service{engine: session.New(time.Now), failed: map[uint32]int64{}}
 			before, err := s.engine.StartExercise(model.Profile{ID: "test"})

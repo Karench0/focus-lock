@@ -75,6 +75,7 @@ export interface State {
     path: string;
     pid: number;
     connected: boolean;
+    resourceCapable: boolean;
     applied: string;
   }[];
   statistics: Statistics;

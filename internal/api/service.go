@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/Karench0/focus-lock/internal/applications"
@@ -34,6 +35,7 @@ type Service struct {
 	studyPlan     *studyPreparation
 	studyQuiz     *kotlinquiz.Quiz
 	startingStudy bool
+	language      atomic.Value
 }
 type State struct {
 	Session    session.Snapshot `json:"session"`
@@ -47,6 +49,11 @@ type State struct {
 
 func New(store *storage.Store, hostPath string, preview bool) (*Service, error) {
 	s := &Service{store: store, engine: session.New(time.Now), preview: preview, stop: make(chan struct{}), done: make(chan struct{}), failed: map[uint32]int64{}}
+	settings, err := store.Settings()
+	if err != nil {
+		return nil, err
+	}
+	s.language.Store(settings.Language)
 	if !preview {
 		b, err := bridge.Start(hostPath, s.rules, s.siteBlocks)
 		if err != nil {
@@ -170,7 +177,7 @@ func (s *Service) monitor(snap session.Snapshot) {
 func (s *Service) recordTermination(p applications.Process, err error) error {
 	if err != nil {
 		s.failed[p.PID] = p.Created
-		if applications.IsProtectedProcessError(err) {
+		if applications.IsProtectedProcessError(err) || errors.Is(err, applications.ErrProcessGone) {
 			return nil
 		}
 		return err
@@ -251,7 +258,11 @@ func (s *Service) SaveSettings(v model.Settings) error {
 	if v.Language != "ru" && v.Language != "en" || v.ExitDelaySeconds < 0 || v.ExitDelaySeconds > 3600 {
 		return errors.New("invalid settings")
 	}
-	return s.store.SaveSettings(v)
+	if err := s.store.SaveSettings(v); err != nil {
+		return err
+	}
+	s.language.Store(v.Language)
+	return nil
 }
 func (s *Service) profile(id string) (model.Profile, error) {
 	ps, err := s.store.Profiles()
@@ -268,6 +279,15 @@ func (s *Service) profile(id string) (model.Profile, error) {
 func (s *Service) preflight(p model.Profile) ([]applications.Process, error) {
 	if s.preview {
 		return []applications.Process{}, nil
+	}
+	if p.Mode == "strict" {
+		for _, status := range s.bridge.Status() {
+			for _, app := range p.Applications {
+				if status.Connected && !status.ResourceCapable && strings.EqualFold(status.Path, app.Path) {
+					return nil, errors.New("Обновите расширение Focus Lock из новой папки browser-extension и перезагрузите его на странице расширений браузера")
+				}
+			}
+		}
 	}
 	all, err := applications.Snapshot()
 	if err != nil {
@@ -388,19 +408,20 @@ func (s *Service) Active() bool        { return running(s.engine.Snapshot()) }
 func (s *Service) ClearError()         { s.mu.Lock(); defer s.mu.Unlock(); s.lastError = "" }
 func (s *Service) SetNotify(fn func()) { s.mu.Lock(); defer s.mu.Unlock(); s.notify = fn }
 func (s *Service) rules() bridge.Rules {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	// Native heartbeats must not wait for discovery, process inspection, window
+	// operations or SQLite. The engine has its own short-lived lock.
 	snap := s.engine.Snapshot()
-	settings, _ := s.store.Settings()
-	r := bridge.Rules{Exercise: snap.Exercise, Active: running(snap), Mode: snap.Profile.Mode, Websites: snap.Profile.Websites, Language: settings.Language, LeaseMS: 6000}
+	language, _ := s.language.Load().(string)
+	if language == "" {
+		language = "ru"
+	}
+	r := bridge.Rules{Exercise: snap.Exercise, Active: running(snap), Mode: snap.Profile.Mode, Websites: snap.Profile.Websites, Language: language, LeaseMS: 6000}
 	if r.Active {
 		r.SessionID = snap.ID
 	}
 	return r
 }
 func (s *Service) siteBlocks(n int) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	for i := 0; i < n; i++ {
 		s.engine.AddBlock(true)
 	}

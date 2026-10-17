@@ -11,7 +11,7 @@ type entry struct {
 
 var pool = [...]entry{
 	{
-		prompt: "В launch(Dispatchers.Default) выполняется долгий CPU-цикл без suspend-вызовов. После job.cancel() цикл продолжает считать. Как добавить кооперативную отмену, сохранив вычисления в корутине?",
+		prompt: "После `job.cancel()` долгий CPU-цикл продолжает считать. Как добавить кооперативную отмену, сохранив вычисления в корутине?\n\n```kotlin\nval job = launch(Dispatchers.Default) {\n    while (hasWork()) {\n        computeNextChunk()\n    }\n}\njob.cancel()\n```",
 		options: [8]string{
 			"Периодически вызывать ensureActive() из контекста этой корутины.",
 			"Поменять val job на var: отменяется только изменяемый Job.",
@@ -25,7 +25,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines/ensure-active.html",
 	},
 	{
-		prompt: "В coroutineScope запущены две дочерние launch без отдельных Job. Первая бросает необработанный IOException, вторая находится в delay. Исключение ловят снаружи coroutineScope. Что произойдёт?",
+		prompt: "В `coroutineScope` две дочерние корутины без отдельных `Job`. Исключение ловят снаружи scope. Что произойдёт?\n\n```kotlin\ncoroutineScope {\n    launch { throw IOException() }\n    launch { delay(10_000) }\n}\n```",
 		options: [8]string{
 			"IOException останется только внутри первой launch, а scope завершится успешно.",
 			"Вторая корутина будет отменена; scope дождётся завершения детей и выбросит исключение наружу.",
@@ -39,7 +39,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/exception-handling.html",
 	},
 	{
-		prompt: "В supervisorScope первая дочерняя launch с установленным CoroutineExceptionHandler бросает исключение. Вторая дочерняя launch продолжает полезную работу; тело самого scope не падает. Каково поведение supervision?",
+		prompt: "Первая дочерняя корутина падает; тело самого `supervisorScope` не падает. Каково поведение supervision?\n\n```kotlin\nsupervisorScope {\n    launch(handler) { throw IOException() }\n    launch { doUsefulWork() }\n}\n```",
 		options: [8]string{
 			"Любая ошибка дочерней launch обязательно отменяет весь supervisorScope.",
 			"Handler откатывает первую корутину к месту перед throw.",
@@ -53,7 +53,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/exception-handling.html#supervision",
 	},
 	{
-		prompt: "Есть цепочка source.map { parse(it) }.catch { emit(fallback) }.collect { save(it) }. Какое исключение перехватит именно этот catch (отмену не рассматриваем)?",
+		prompt: "Какое исключение перехватит этот `catch`? Отмену не рассматриваем.\n\n```kotlin\nsource\n    .map { parse(it) }\n    .catch { emit(fallback) }\n    .collect { save(it) }\n```",
 		options: [8]string{
 			"Только исключение из save, потому что collect запускает всю цепочку.",
 			"Любое исключение в приложении, пока collect активен.",
@@ -67,7 +67,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/catch.html",
 	},
 	{
-		prompt: "data class State(val count: Int); val state = MutableStateFlow(State(1)). Подписчик уже получил State(1). Затем выполняется state.value = State(1), без других обновлений. Что гарантирует StateFlow?",
+		prompt: "Подписчик уже получил `State(1)`. Затем выполняется последнее присваивание, других обновлений нет. Что гарантирует `StateFlow`?\n\n```kotlin\ndata class State(val count: Int)\n\nval state = MutableStateFlow(State(1))\nstate.value = State(1)\n```",
 		options: [8]string{
 			"Подписчик получит новое событие, потому что ссылка на объект другая.",
 			"Присваивание завершит поток.",
@@ -81,7 +81,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/",
 	},
 	{
-		prompt: "Есть interface Producer<out T> { fun next(): T }. Почему Producer<String> можно передать туда, где ожидается Producer<Any>?",
+		prompt: "Почему `Producer<String>` можно передать туда, где ожидается `Producer<Any>`?\n\n```kotlin\ninterface Producer<out T> {\n    fun next(): T\n}\n```",
 		options: [8]string{
 			"Out отключает проверку типов во время компиляции.",
 			"Компилятор копирует все строки в новый Producer<Any>.",
@@ -95,7 +95,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/generics.html#declaration-site-variance",
 	},
 	{
-		prompt: "inline fun <reified T> matches(x: Any) = x is T. Что верно о matches<List<String>>(listOf(42)) на JVM?",
+		prompt: "Что верно о последнем вызове на JVM?\n\n```kotlin\ninline fun <reified T> matches(x: Any) = x is T\n\nmatches<List<String>>(listOf(42))\n```",
 		options: [8]string{
 			"Функция проверит каждый элемент и гарантированно вернёт false.",
 			"Reified превращает List<Int> в List<String> перед проверкой.",
@@ -109,7 +109,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/generics.html#generics-type-checks-and-casts",
 	},
 	{
-		prompt: "inline fun schedule(crossinline action: () -> Unit) { executor.execute { action() } }. Зачем action отмечен crossinline?",
+		prompt: "Зачем параметр `action` отмечен `crossinline`?\n\n```kotlin\ninline fun schedule(crossinline action: () -> Unit) {\n    executor.execute { action() }\n}\n```",
 		options: [8]string{
 			"Чтобы executor обязательно выполнил action в главном потоке.",
 			"Чтобы action можно было вернуть из schedule как значение без ограничений.",
@@ -123,7 +123,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/inline-functions.html#non-local-jump-expressions",
 	},
 	{
-		prompt: "Inline-функция должна сохранить переданную лямбду () -> Unit в поле класса для последующего вызова. Какой модификатор нужен именно у этого параметра?",
+		prompt: "Inline-функция должна сохранить переданную лямбду в поле класса для последующего вызова. Какой модификатор нужен вместо `???`?\n\n```kotlin\nvar savedAction: (() -> Unit)? = null\n\ninline fun save(??? action: () -> Unit) {\n    savedAction = action\n}\n```",
 		options: [8]string{
 			"noinline: параметр остаётся обычным значением функционального типа, которое можно сохранить.",
 			"crossinline: он всегда разрешает сохранить сам параметр в поле.",
@@ -137,7 +137,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/inline-functions.html#noinline",
 	},
 	{
-		prompt: "data class User(val tags: MutableList<String>) { var visits = 0 }. Созданы a = User(mutableListOf(\"A\")); a.visits = 5; val b = a.copy(); b.tags.add(\"B\"). Как верно описать результат без переопределения equals?",
+		prompt: "Как верно описать результат без переопределения `equals`?\n\n```kotlin\ndata class User(val tags: MutableList<String>) {\n    var visits = 0\n}\n\nval a = User(mutableListOf(\"A\"))\na.visits = 5\nval b = a.copy()\nb.tags.add(\"B\")\n```",
 		options: [8]string{
 			"Список a не изменился; copy глубоко копирует все поля.",
 			"У a и b общий список из двух элементов, b.visits равен 0, a == b даёт true.",
@@ -151,7 +151,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/data-classes.html",
 	},
 	{
-		prompt: "На JVM созданы val a = intArrayOf(1, 2) и val b = intArrayOf(1, 2). Что дадут a == b и a.contentEquals(b) соответственно?",
+		prompt: "Что дадут два последних выражения на JVM соответственно?\n\n```kotlin\nval a = intArrayOf(1, 2)\nval b = intArrayOf(1, 2)\n\na == b\na.contentEquals(b)\n```",
 		options: [8]string{
 			"True и true: оператор == всегда сравнивает элементы массивов.",
 			"True и false: contentEquals проверяет только совпадение ссылок.",
@@ -165,7 +165,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/equality.html#array-equality",
 	},
 	{
-		prompt: "Объявлены @JvmInline value class UserId(val value: Int) и fun <T> identity(x: T): T = x. Что верно о передаче UserId(7) через generic-параметр identity на JVM?",
+		prompt: "Что верно о передаче `UserId(7)` через generic-параметр `identity` на JVM?\n\n```kotlin\n@JvmInline\nvalue class UserId(val value: Int)\n\nfun <T> identity(x: T): T = x\n\nidentity(UserId(7))\n```",
 		options: [8]string{
 			"UserId становится typealias для Int, и типы больше не различаются.",
 			"Generic-вызов запрещён для value class на этапе компиляции.",
@@ -179,7 +179,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/inline-classes.html#representation",
 	},
 	{
-		prompt: "В обычном JVM-модуле: sealed interface Result; data object Done : Result; data class Failed(val reason: String) : Result. В функции fun label(x: Result?): String = when (x) { Done -> \"ok\"; is Failed -> \"error\" } чего не хватает для исчерпывающего when?",
+		prompt: "В обычном JVM-модуле чего не хватает для исчерпывающего `when`?\n\n```kotlin\nsealed interface Result\ndata object Done : Result\ndata class Failed(val reason: String) : Result\n\nfun label(x: Result?): String = when (x) {\n    Done -> \"ok\"\n    is Failed -> \"error\"\n}\n```",
 		options: [8]string{
 			"Ветки для любого возможного будущего подкласса за пределами модуля.",
 			"Ветки is Any, даже если добавить обработку null.",
@@ -193,7 +193,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/sealed-classes.html#use-sealed-classes-with-when-expression",
 	},
 	{
-		prompt: "open class Animal; class Cat : Animal(); fun Animal.name() = \"animal\"; fun Cat.name() = \"cat\". Что вернёт fun describe(x: Animal) = x.name() при вызове describe(Cat())?",
+		prompt: "Что вернёт `describe(Cat())`?\n\n```kotlin\nopen class Animal\nclass Cat : Animal()\n\nfun Animal.name() = \"animal\"\nfun Cat.name() = \"cat\"\n\nfun describe(x: Animal) = x.name()\n```",
 		options: [8]string{
 			"\"cat\", поскольку extension-функции выбираются виртуально по объекту.",
 			"\"animalcat\": компилятор последовательно вызовет оба расширения.",
@@ -207,7 +207,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/extensions.html#extension-or-member-functions",
 	},
 	{
-		prompt: "Java-метод String getTitle() не имеет аннотаций nullability и может вернуть null. В Kotlin написано val title: String = javaObject.title. Какой риск остаётся?",
+		prompt: "Java-метод `String getTitle()` не имеет аннотаций nullability и может вернуть null. Какой риск остаётся в Kotlin?\n\n```kotlin\nval title: String = javaObject.title\n```",
 		options: [8]string{
 			"Компилятор обязан отклонить присваивание platform type к String.",
 			"Null автоматически превратится в пустую строку.",
@@ -221,7 +221,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/java-interop.html#null-safety-and-platform-types",
 	},
 	{
-		prompt: "В Kotlin/JVM свойство val config by lazy { loadConfig() } использует стандартный режим по умолчанию. Несколько потоков впервые читают config; loadConfig завершается успешно. Что верно?",
+		prompt: "Несколько потоков впервые читают `config`; `loadConfig` завершается успешно. Что верно о стандартном режиме `lazy` в Kotlin/JVM?\n\n```kotlin\nval config by lazy {\n    loadConfig()\n}\n```",
 		options: [8]string{
 			"Инициализатор выполняется при объявлении свойства, ещё до первого чтения.",
 			"Каждое чтение заново выполняет loadConfig.",
@@ -235,7 +235,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/delegated-properties.html#lazy-properties",
 	},
 	{
-		prompt: "interface Counter { val value: Int; fun read(): Int }; class Original : Counter { override val value = 1; override fun read() = value }; class Wrapper(c: Counter) : Counter by c { override val value = 2 }. Чему равны Wrapper(Original()).value и Wrapper(Original()).read()?",
+		prompt: "Чему равны `Wrapper(Original()).value` и `Wrapper(Original()).read()`?\n\n```kotlin\ninterface Counter {\n    val value: Int\n    fun read(): Int\n}\n\nclass Original : Counter {\n    override val value = 1\n    override fun read() = value\n}\n\nclass Wrapper(c: Counter) : Counter by c {\n    override val value = 2\n}\n```",
 		options: [8]string{
 			"2 и 1: прямое свойство переопределено, но read выполняется на объекте-делегате с его value.",
 			"2 и 2: вызовы внутри делегата автоматически перенаправляются в Wrapper.",
@@ -249,7 +249,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/delegation.html#overriding-a-member-of-an-interface-implemented-by-delegation",
 	},
 	{
-		prompt: "val log = mutableListOf<Int>(); val result = (1..5).asSequence().map { log.add(it); it * 2 }.filter { it > 4 }.take(1).toList(). Чему равны log и result?",
+		prompt: "Чему равны `log` и `result`?\n\n```kotlin\nval log = mutableListOf<Int>()\nval result = (1..5).asSequence()\n    .map { log.add(it); it * 2 }\n    .filter { it > 4 }\n    .take(1)\n    .toList()\n```",
 		options: [8]string{
 			"Log = [1, 2, 3, 4, 5], result = [6]: map всегда полностью материализует источник.",
 			"Log = [1, 2, 3], result = [6]: последовательность обрабатывает элементы лениво и прекращает запрос после первого подходящего.",
@@ -263,7 +263,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/sequences.html",
 	},
 	{
-		prompt: "val mutable = mutableListOf(\"A\"); val view: List<String> = mutable; mutable.add(\"B\"). Что верно о view и типе List в Kotlin?",
+		prompt: "Что верно о `view` и типе `List` в Kotlin?\n\n```kotlin\nval mutable = mutableListOf(\"A\")\nval view: List<String> = mutable\nmutable.add(\"B\")\n```",
 		options: [8]string{
 			"View остаётся [A]: присваивание к List создаёт неизменяемую копию.",
 			"Mutable.add не компилируется, поскольку на объект уже есть ссылка типа List.",
@@ -277,7 +277,7 @@ var pool = [...]entry{
 		sourceURL: "https://kotlinlang.org/docs/collections-overview.html#collection-types",
 	},
 	{
-		prompt: "class Box(var text: String?). Почему в fun length(b: Box): Int { if (b.text != null) return b.text.length; return 0 } компилятор не принимает обращение b.text.length без ?. или !!?",
+		prompt: "Почему компилятор не принимает `b.text.length` без `?.` или `!!`?\n\n```kotlin\nclass Box(var text: String?)\n\nfun length(b: Box): Int {\n    if (b.text != null) {\n        return b.text.length\n    }\n    return 0\n}\n```",
 		options: [8]string{
 			"У String нет свойства length; оно есть только у CharSequence.",
 			"Проверка != null никогда не позволяет smart cast ни для каких переменных.",

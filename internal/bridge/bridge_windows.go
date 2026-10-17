@@ -35,20 +35,22 @@ type Rules struct {
 	LeaseMS   int             `json:"leaseMs"`
 }
 type Ack struct {
-	StudyCapable bool   `json:"studyCapable"`
-	Applied      string `json:"applied"`
-	OK           bool   `json:"ok"`
-	Blocks       int    `json:"blocks"`
+	ResourceCapable bool   `json:"resourceCapable"`
+	StudyCapable    bool   `json:"studyCapable"`
+	Applied         string `json:"applied"`
+	OK              bool   `json:"ok"`
+	Blocks          int    `json:"blocks"`
 }
 type Status struct {
-	StudyCapable bool      `json:"studyCapable"`
-	Browser      string    `json:"browser"`
-	Path         string    `json:"path"`
-	PID          uint32    `json:"pid"`
-	Connected    bool      `json:"connected"`
-	Applied      string    `json:"applied"`
-	LastSeen     time.Time `json:"-"`
-	Created      int64     `json:"-"`
+	ResourceCapable bool      `json:"resourceCapable"`
+	StudyCapable    bool      `json:"studyCapable"`
+	Browser         string    `json:"browser"`
+	Path            string    `json:"path"`
+	PID             uint32    `json:"pid"`
+	Connected       bool      `json:"connected"`
+	Applied         string    `json:"applied"`
+	LastSeen        time.Time `json:"-"`
+	Created         int64     `json:"-"`
 }
 type Server struct {
 	mu       sync.Mutex
@@ -178,6 +180,7 @@ func (s *Server) serve(c net.Conn) {
 		s.mu.Lock()
 		status.Connected = ack.OK
 		status.StudyCapable = ack.StudyCapable
+		status.ResourceCapable = ack.ResourceCapable
 		status.Applied = ack.Applied
 		status.LastSeen = time.Now()
 		s.clients[c] = status
@@ -213,7 +216,7 @@ func (s *Server) HealthyStudy(p applications.Process, all []applications.Process
 func (s *Server) healthy(p applications.Process, all []applications.Process, id string, study bool) bool {
 	statuses := s.Status()
 	for _, st := range statuses {
-		if !st.Connected || (study && !st.StudyCapable) || st.Applied != id || !strings.EqualFold(p.Path, st.Path) {
+		if !st.Connected || !st.ResourceCapable || (study && !st.StudyCapable) || st.Applied != id || !strings.EqualFold(p.Path, st.Path) {
 			continue
 		}
 		pid := p.PID

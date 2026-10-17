@@ -2,7 +2,7 @@
 <h1 align="center">Focus Lock</h1>
 <p align="center">Choose your tools. Set your time. Own your attention.</p>
 <p align="center">
-  <a href="https://github.com/Karench0/focus-lock/releases"><img alt="Version" src="https://img.shields.io/badge/version-0.3.1_preview-3B82F6?style=flat-square"></a>
+  <a href="https://github.com/Karench0/focus-lock/releases"><img alt="Version" src="https://img.shields.io/badge/version-0.3.2_preview-3B82F6?style=flat-square"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-949CA8?style=flat-square"></a>
   <img alt="Windows 11 x64" src="https://img.shields.io/badge/Windows-11_x64-949CA8?style=flat-square">
   <a href="https://github.com/Karench0/focus-lock/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Karench0/focus-lock/actions/workflows/ci.yml/badge.svg"></a>
@@ -15,7 +15,7 @@
 
 Focus Lock is a local desktop app for voluntary, time-limited focus on Windows 11. Pick the applications and websites your task needs, choose a session length, and let the app enforce those boundaries. The interface is deliberately quiet: graphite surfaces, clear typography, a single blue accent, and a timer that stays in charge of the screen.
 
-**0.3.1 is a prerelease.** Process control and Chromium website filtering are implemented, but this is not an OS security boundary. Read the limitations below before using it with valuable unsaved work. Task Manager remains available as an emergency exit.
+**0.3.2 is a prerelease.** Process control and Chromium website filtering are implemented, but this is not an OS security boundary. Read the limitations below before using it with valuable unsaved work. Task Manager remains available as an emergency exit.
 
 ## Features
 
@@ -64,7 +64,7 @@ The unpacked extension has a stable public-key-derived ID, `ilmpmofmjbomibcnecek
 ## Quick Start
 
 1. Select a profile and open **Applications**. Allow your editor, reader, terminal or other required tools. Add portable executables with **Add .exe**.
-2. In **Websites**, add domains such as `go.dev` and `github.com`. Enable subdomains only when needed. Add `localhost` explicitly for local development; any port is then allowed for that hostname. If styles, scripts or images are hosted elsewhere, expand **Resource domains** for the site and approve its exact CDN domains. GitHub offers an explicit suggestion button. These permissions allow resources only from that site, not navigation or embedded frames to the CDN.
+2. In **Websites**, add domains such as `go.dev` and `github.com`. Enable subdomains only when needed. Add `localhost` explicitly for local development; any port is then allowed for that hostname. Styles, scripts, images, fonts, APIs and media requested by an allowed page load automatically from its resource hosts. Direct navigation and embedded pages on other hosts remain restricted. Existing extra resource entries are preserved; manual CDN lists are no longer required for page assets. Update/reload the bundled extension when updating the app.
 3. During a session, click **Mini timer** in the title bar. Drag its grip to move it; use the arrow to return to the original window. Stop requests confirmation and keeps restrictions active throughout the configured delay. The minus icon hides it in the system tray; the tray’s Open item restores the full window.
 4. Configure an early-exit delay in **Settings** (60 seconds by default).
 5. Return to Dashboard, choose 15–120 minutes or a custom 1–1440 minutes, and press **Start Focus**.
@@ -112,9 +112,9 @@ Build the complete distributable (includes the native host and extension):
 
 ```powershell
 ./scripts/build.ps1
-./scripts/package.ps1 -Version 0.3.1
+./scripts/package.ps1 -Version 0.3.2
 # Optional, with Inno Setup 6 installed:
-./scripts/package.ps1 -Version 0.3.1 -Installer
+./scripts/package.ps1 -Version 0.3.2 -Installer
 ```
 
 The app is at `build/bin/FocusLock.exe`; release assets are under `build/release/`. `wails build` alone only builds the GUI, so use the script for a complete package. In development, register a host built beside the GUI if you test Native Messaging.
@@ -162,7 +162,7 @@ docs/                       Architecture, test evidence and release notes
 - Known browsers are recognized by executable family and a verified native-host parent tree. Multiple profiles may share a browser root, and extension permissions/incognito settings are not fully attestable. Use one dedicated browser profile. Unsupported browsers are excluded when recognized, but detection is not a universal browser classifier.
 - Allowed child processes must remain inside the allowed program's directory. Some programs need additional explicit executables. Allowing a terminal/editor/interpreter inherently enables more ways to launch other code.
 - Web filtering covers HTTP(S) navigation and network requests (including WebSockets), not `file:`, internal browser pages, cached service-worker responses, browser-internal features, existing offline pages, VPN software or other apps' network traffic. Ordinary sessions leave previously loaded pages in place; starting the personal exercise replaces already-open disallowed HTTP(S) tabs with the blocked page.
-- Login, CDNs, redirects and embedded content may need extra domains. Nothing is automatically allowlisted; review and add the dependencies you need before the session.
+- Resource requests initiated by an allowed site are permitted automatically, including cross-domain APIs and media. Separate sign-in pages, redirects and embedded documents may need additional website entries. Allowing a site also trusts the resources it requests; this is website navigation filtering, not a network security boundary.
 - Native host registrations are per-user HKCU entries. The installer removes them on uninstall. For a portable install, delete the two `...\NativeMessagingHosts\com.focuslock.bridge` keys under `HKCU\Software\Google\Chrome` and `HKCU\Software\Microsoft\Edge`, remove the extension, and delete the app folder. Data at `%LOCALAPPDATA%\FocusLock` can be removed separately.
 - After a crash/reboot the app starts idle, marks an unfinished record as recovered and never restores enforcement. Focus time after the last persisted heartbeat is not credited. Sleep/suspend and browser scheduling still require testing across hardware before a stable release.
 - There is no telemetry, cloud account or auto-update service. Profiles contain local executable paths; keep the local database private. Only counts of blocked attempts are saved, not visited URLs or page content.
@@ -181,7 +181,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), open a focused issue, and include repro
 
 In Settings, activate the small circle near the bottom-right three times within 1.6 seconds (each gap no more than 0.8 seconds). The cursor deliberately stays ordinary. The extra panel contains **Storozhenko mode**. This personal mode requires the explicit “I am Storozhenko” confirmation; the app does not infer or verify a person's identity from their account name.
 
-Save work before confirming: the review lists unrelated apps that will close; already-open unrelated HTTP(S) tabs are replaced with the blocked page. Only the default Chrome/Edge with the updated connected extension and installed IntelliJ IDEA/Android Studio are allowed, plus existing system/security/accessibility exemptions. The study website is `kotlinlang.org`, with fonts from `resources.jetbrains.com` permitted only as site resources. YouTube/TikTok and Steam/Dota are outside this temporary policy, even if an ordinary profile allows them.
+Save work before confirming: the review lists unrelated apps that will close; already-open unrelated HTTP(S) tabs are replaced with the blocked page. Only the default Chrome/Edge with the updated connected extension and installed IntelliJ IDEA/Android Studio are allowed, plus existing system/security/accessibility exemptions. The study website is `kotlinlang.org`; its styles, scripts and fonts load as page resources. YouTube/TikTok and Steam/Dota are outside this temporary policy, even if an ordinary profile allows them. Consent covers the reviewed executable paths, including new instances of the same helper; unreviewed executable paths require a fresh review. Each actual termination still rechecks PID, creation time and path.
 
 Elevated apps and processes without termination permission are skipped. If Windows or an antivirus denies closure after the review, that process is exempted for its current instance and the exercise continues closing ordinary disallowed apps. This does not request administrator privileges or count the skipped process as closed.
 

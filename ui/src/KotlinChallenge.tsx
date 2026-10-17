@@ -1,6 +1,7 @@
 import { useId, useState } from "react";
 import { BookOpen, Check } from "lucide-react";
 import "./storozhenko.css";
+import { KotlinText } from "./KotlinText";
 
 type Question = {
   token: string;
@@ -89,7 +90,7 @@ function QuestionForm({
         aria-label={ru ? "Вопрос по Kotlin" : "Kotlin question"}
         tabIndex={0}
       >
-        {question.prompt}
+        <KotlinText text={question.prompt} />
       </div>
       <div className="kotlin-answer-area">
         <span className="kotlin-options-title" aria-hidden="true">
@@ -118,7 +119,7 @@ function QuestionForm({
                 <span className="kotlin-option-letter" aria-hidden="true">
                   {String.fromCharCode(65 + index)}
                 </span>
-                <span className="kotlin-option-text">{option}</span>
+                <span className="kotlin-option-text"><KotlinText text={option} /></span>
                 {chosen === index && (
                   <Check
                     size={15}

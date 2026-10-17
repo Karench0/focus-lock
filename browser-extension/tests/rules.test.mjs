@@ -34,7 +34,7 @@ test("strict policy explicitly allows main-frame navigation as well as subresour
     mode: "strict",
     websites: [{ domain: "go.dev", subdomains: false }],
   });
-  assert.equal(r.length, 4);
+  assert.equal(r.length, 5);
   assert.equal(r[0].action.redirect.extensionPath, "/blocked.html");
   assert.equal(r[1].action.type, "block");
   assert.equal(r[2].action.type, "allow");
@@ -88,9 +88,18 @@ test("CDN permissions require explicit approval and stay scoped to the originati
   });
   assert.equal(
     old.some((rule) => rule.condition.initiatorDomains),
-    false,
-    "existing profiles must not silently grant CDN access",
+    true,
+    "existing profiles also load the allowed page's dependencies",
   );
+});
+test("allowed documents load assets and APIs without granting navigation or frames", () => {
+  const rules = compileRules({ active: true, mode: "strict", websites: [{ domain: "music.yandex.ru" }] });
+  const resources = rules.find((r) => r.id === 500);
+  assert.deepEqual(resources.condition.initiatorDomains, ["music.yandex.ru"]);
+  assert.deepEqual(resources.condition.excludedResourceTypes, ["main_frame", "sub_frame"]);
+  for (const url of ["https://cdn.example.test/app.css", "https://api.example.test/data", "wss://stream.example.test/"])
+    assert.ok(new RegExp(resources.condition.regexFilter).test(url));
+  assert.ok(resources.priority > rules.find((r) => r.id === 2).priority);
 });
 test("resource policies are bounded and ignored in blocklist mode", () => {
   assert.throws(() =>

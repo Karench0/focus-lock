@@ -84,10 +84,17 @@ func (s *Service) PrepareStorozhenko() (StudyPlan, error) {
 		if err != nil {
 			return StudyPlan{}, err
 		}
-		for _, pr := range all {
-			if strings.EqualFold(pr.Path, browser.Path) && s.bridge.HealthyStudy(pr, all, "") {
-				view.BrowserReady = true
+		deadline := time.Now().Add(6 * time.Second)
+		for {
+			for _, pr := range all {
+				if strings.EqualFold(pr.Path, browser.Path) && s.bridge.HealthyStudy(pr, all, "") {
+					view.BrowserReady = true
+				}
 			}
+			if view.BrowserReady || time.Now().After(deadline) {
+				break
+			}
+			time.Sleep(100 * time.Millisecond)
 		}
 		view.Blocked = s.studyBlocked(profile, all, "")
 	}
@@ -131,10 +138,10 @@ func (s *Service) StartStorozhenko(token, self string, confirmed bool) error {
 
 	ready := s.preview
 	if !ready {
-		deadline := time.Now().Add(5 * time.Second)
+		deadline := time.Now().Add(15 * time.Second)
 		for time.Now().Before(deadline) {
 			for _, status := range s.bridge.Status() {
-				if status.Connected && status.StudyCapable && status.Applied == snap.ID && strings.EqualFold(status.Path, plan.profile.Applications[0].Path) {
+				if status.Connected && status.StudyCapable && status.ResourceCapable && status.Applied == snap.ID && strings.EqualFold(status.Path, plan.profile.Applications[0].Path) {
 					ready = true
 				}
 			}
@@ -165,20 +172,32 @@ func (s *Service) StartStorozhenko(token, self string, confirmed bool) error {
 			return fail(err)
 		}
 		blocked := s.studyBlocked(plan.profile, all, snap.ID)
-		approved := map[uint32]int64{}
-		for _, pr := range plan.view.Blocked {
-			approved[pr.PID] = pr.Created
-		}
-		for _, pr := range blocked {
-			if approved[pr.PID] != pr.Created {
-				return fail(errors.New("open applications changed; review the exercise again"))
-			}
+		if err = reviewedStudyApplications(plan.view.Blocked, blocked); err != nil {
+			return fail(err)
 		}
 		if err = desktop.OpenKotlinDocs(); err != nil {
 			return fail(err)
 		}
 		if err = s.closeStudyApplications(blocked, applications.Terminate); err != nil {
 			return fail(err)
+		}
+	}
+	return nil
+}
+
+// The consent dialog displays executable paths, not PID values. Helpers may
+// restart while the user reads it; only the same reviewed executable is covered.
+// Terminate still rechecks the CURRENT snapshot's PID, creation time and path.
+func reviewedStudyApplications(reviewed, current []applications.Process) error {
+	paths := map[string]bool{}
+	for _, pr := range reviewed {
+		if pr.Path != "" {
+			paths[strings.ToLower(pr.Path)] = true
+		}
+	}
+	for _, pr := range current {
+		if !paths[strings.ToLower(pr.Path)] {
+			return errors.New("open applications changed; review the exercise again")
 		}
 	}
 	return nil

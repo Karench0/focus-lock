@@ -1,4 +1,8 @@
-# Focus Lock 0.3.1 — Windows preview
+# Focus Lock 0.3.2 — Windows preview
+
+Allowed sites now load their own cross-domain styles, scripts, fonts, images, APIs and media without manually maintained CDN lists. Direct navigation and unlisted embedded documents remain restricted. Update both the desktop app and the bundled extension, then reload affected pages.
+
+Exercise startup keeps Native Messaging heartbeats independent of app discovery, process checks and slow tab replacement. A reviewed helper can restart without invalidating consent for that executable; already-exited processes are skipped. Failed starts refresh the review token, and old extensions are marked as needing an update. Kotlin questions now show indented, highlighted code blocks.
 
 Protected processes no longer cancel exercise startup or monitoring. DefenderSessionHelper, elevated apps and processes without termination permission are exempt; an access denial after the review skips that process and continues closing the remaining ordinary applications. No administrator permission is requested. Other unexpected failures are still reported.
 
@@ -6,7 +10,7 @@ This version adds the explicitly confirmed personal Storozhenko Kotlin exercise.
 
 A compact timer sits above other windows during a session. Click **Mini timer**, move it by its grip, or expand back to the original window. Stop uses confirmation and the existing delay in ordinary sessions; in the untimed personal exercise it opens the Kotlin question. Resize takes 240 ms and respects reduced motion. The timer can stay compact when a session finishes.
 
-The preceding update fixes missing website styles/scripts in strict mode and the extension-folder button. In Websites, expand Resource domains and explicitly approve the required CDN domains. GitHub has a suggested list. Resource permissions apply only to requests originating from the selected site; direct navigation and embedded frames remain blocked. Update the desktop app and reload the unpacked extension, approve resources before starting a new session, then reload the website. Existing profiles are preserved.
+The extension-folder button opens the bundled extension directory. Existing profiles, settings and extra resource entries are preserved. Separate sign-in pages and redirected or embedded documents on other domains still require website permission.
 
 The public preview includes the Go/Wails Windows app, Russian/English graphite UI, application and website profiles, backend session/exit timers, SQLite statistics, tray lifecycle, and a Chrome/Edge Manifest V3 companion extension.
 

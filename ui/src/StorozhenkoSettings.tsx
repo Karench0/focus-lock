@@ -127,6 +127,7 @@ export function StorozhenkoConsent({
   browserReady,
   onConfirm,
   onCancel,
+  onRetry,
 }: {
   language: Language;
   busy: boolean;
@@ -134,6 +135,7 @@ export function StorozhenkoConsent({
   browserReady: boolean;
   onConfirm: () => void;
   onCancel: () => void;
+  onRetry: () => void;
 }) {
   const ru = language === "ru";
   const [agreed, setAgreed] = useState(false);
@@ -201,6 +203,9 @@ export function StorozhenkoConsent({
               ? "Обновите и подключите расширение Focus Lock в Chrome или Edge, выбранном браузером по умолчанию."
               : "Update and connect the Focus Lock extension in your default Chrome or Edge browser."}
           </span>
+          <button type="button" className="secondary" disabled={busy} onClick={onRetry}>
+            {ru ? "Проверить подключение" : "Check connection"}
+          </button>
         </div>
       )}
       <label className="storozhenko-attestation">

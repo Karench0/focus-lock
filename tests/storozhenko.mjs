@@ -171,6 +171,26 @@ try {
 
   await mode.click();
   dialog = page.getByRole("dialog");
+  // Force one start failure, then ensure the same dialog receives a new
+  // preparation token and asks for consent again instead of replaying it.
+  let firstAttempt = true;
+  const startTokens = [];
+  await page.route(base.origin + "/api", async (route) => {
+    const payload = route.request().postDataJSON();
+    if (payload?.command === "startStorozhenko") {
+      startTokens.push(payload.payload.token);
+      if (firstAttempt) {
+        firstAttempt = false;
+        await route.fulfill({ status: 400, contentType: "text/plain", body: "Simulated first-start failure" });
+        return;
+      }
+    }
+    await route.continue();
+  });
+  await dialog.getByRole("checkbox", { name: "Yes, I am Storozhenko and I want to enable this mode", exact: true }).check();
+  await dialog.getByRole("button", { name: "Enable mode", exact: true }).click();
+  await dialog.getByRole("alert").filter({ hasText: "Simulated first-start failure" }).waitFor();
+  assert.equal(await dialog.getByRole("checkbox").isChecked(), false, "fresh review resets explicit consent");
   await dialog
     .getByRole("checkbox", {
       name: "Yes, I am Storozhenko and I want to enable this mode",
@@ -181,6 +201,8 @@ try {
   assert.equal(await enable.isEnabled(), true);
   await enable.click();
   await dialog.waitFor({ state: "detached" });
+  assert.equal(startTokens.length, 2);
+  assert.notEqual(startTokens[0], startTokens[1], "retry must use a fresh start token");
   await poll(
     async () => (await api("state")).session.exercise === true,
     "exercise started after consent",
@@ -276,6 +298,19 @@ try {
     })
     .waitFor();
   const firstQuestion = await api("kotlinQuestion");
+  const codeOf = (question) => question.prompt.match(/```kotlin\n([\s\S]*?)```/)?.[1].trimEnd();
+  await poll(async () => {
+    const layout = await dialog.locator(".kotlin-code pre").evaluateAll((nodes) => {
+      const node = nodes[0];
+      if (!node?.isConnected) return null;
+      const style = getComputedStyle(node);
+      return { whiteSpace: style.whiteSpace, tabSize: style.getPropertyValue("tab-size"), text: node.textContent };
+    });
+    return layout?.whiteSpace === "pre" && layout.tabSize === "4" && layout.text === codeOf(firstQuestion);
+  }, "current question's code block rendered with preserved indentation");
+  assert.equal(await dialog.locator(".kotlin-code pre code").textContent(), codeOf(firstQuestion));
+  assert.ok(await dialog.locator(".kotlin-code .kt-keyword, .kotlin-code .kt-function").count() > 0, "Kotlin tokens are highlighted");
+  await screenshot("kotlin-code-question");
   await dialog
     .getByRole("button", { name: "Keep studying", exact: true })
     .click();
@@ -391,8 +426,8 @@ try {
   );
   await poll(
     async () =>
-      (await dialog.locator(".kotlin-question-prompt").textContent()) ===
-      secondQuestion.prompt,
+      (await dialog.locator(".kotlin-code pre code").textContent()) ===
+      codeOf(secondQuestion),
     "next question rendered",
   );
   assert.equal(

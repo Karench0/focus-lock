@@ -19,8 +19,8 @@ func TestStudyCapabilityBelongsToTheBrowserRoot(t *testing.T) {
 	defer a.Close()
 	defer b.Close()
 	s := &Server{clients: map[net.Conn]Status{
-		a: {PID: old.PID, Created: old.Created, Path: old.Path, Connected: true, Applied: "study", LastSeen: time.Now()},
-		b: {PID: updated.PID, Created: updated.Created, Path: updated.Path, Connected: true, StudyCapable: true, Applied: "study", LastSeen: time.Now()},
+		a: {PID: old.PID, Created: old.Created, Path: old.Path, Connected: true, ResourceCapable: true, Applied: "study", LastSeen: time.Now()},
+		b: {PID: updated.PID, Created: updated.Created, Path: updated.Path, Connected: true, ResourceCapable: true, StudyCapable: true, Applied: "study", LastSeen: time.Now()},
 	}}
 	if !s.Healthy(old, all, "study") || s.HealthyStudy(old, all, "study") {
 		t.Fatal("another profile's upgraded extension authorized an old browser root")
@@ -34,5 +34,13 @@ func TestStudyCapabilityBelongsToTheBrowserRoot(t *testing.T) {
 	all[1].Created++
 	if s.HealthyStudy(child, all, "study") {
 		t.Fatal("recycled browser PID accepted")
+	}
+	all[1].Created--
+	for connection, status := range s.clients {
+		status.ResourceCapable = false
+		s.clients[connection] = status
+	}
+	if s.Healthy(old, all, "study") || s.HealthyStudy(child, all, "study") {
+		t.Fatal("old resource-blocking extension reported as ready")
 	}
 }

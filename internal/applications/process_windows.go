@@ -20,6 +20,7 @@ var kernel32 = windows.NewLazySystemDLL("kernel32.dll")
 var isCritical = kernel32.NewProc("IsProcessCritical")
 
 var ErrProcessProtected = errors.New("process is protected")
+var ErrProcessGone = errors.New("process already exited")
 
 // Protection can change between the snapshot and termination (including AV
 // self-protection). An access denial is an exemption, never a reason to elevate.
@@ -200,6 +201,9 @@ func Terminate(expected Process) error {
 	}
 	h, err := windows.OpenProcess(windows.PROCESS_TERMINATE|windows.PROCESS_QUERY_LIMITED_INFORMATION, false, expected.PID)
 	if err != nil {
+		if expected.PID != 0 && errors.Is(err, windows.ERROR_INVALID_PARAMETER) {
+			return fmt.Errorf("%w: %s", ErrProcessGone, expected.Name)
+		}
 		return err
 	}
 	defer windows.CloseHandle(h)

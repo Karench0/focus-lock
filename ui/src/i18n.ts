@@ -29,6 +29,7 @@ export const copy = {
     locked: "Настройки зафиксированы до завершения сессии",
     extensionMissing: "Расширение не подключено",
     extensionReady: "Расширение подключено",
+    extensionUpdateRequired: "Обновите расширение",
     extensionHint:
       "Блокировка сайтов работает только с расширением Chrome / Edge. В строгом режиме неподключённые браузеры будут закрываться.",
     control: "ПОД ВАШИМ КОНТРОЛЕМ",
@@ -51,14 +52,14 @@ export const copy = {
     exactDomain: "Точный домен",
     resourceDomains: "Домены ресурсов",
     resourceHint:
-      "Если сайт отображается без оформления, добавьте точные домены его CSS, JavaScript, изображений или API. Они будут доступны только как ресурсы этого сайта; переходы и встроенные страницы останутся заблокированы. Изменения применяются со следующей сессии.",
+      "Оформление, скрипты, изображения, API и музыка разрешённого сайта загружаются автоматически. Сохранённые дополнительные домены ресурсов остаются частью профиля. Переходы и встроенные страницы с других доменов требуют отдельного разрешения.",
     githubResourcesHint:
-      "GitHub загружает оформление и скрипты с github.githubassets.com, а изображения — с githubusercontent.com. Разрешите перечисленные домены ресурсов явно:",
+      "Необязательный список доменов GitHub для сохранённых профилей. В обновлённом расширении ресурсы страницы уже загружаются автоматически:",
     addGithubResources: "Разрешить ресурсы GitHub",
     siteEmpty: "Список сайтов пуст",
     siteEmptyHint: "В строгом режиме все HTTP(S)-сайты будут недоступны.",
     dependencies:
-      "Вход и перенаправления могут требовать дополнительных доменов. Добавляйте их осознанно; Focus Lock не разрешает их автоматически.",
+      "Ресурсы разрешённого сайта загружаются автоматически. Для перехода на отдельный сайт входа или встроенной страницы добавьте его домен в список.",
     save: "Сохранить",
     saved: "Сохранено",
     name: "Название",
@@ -168,7 +169,7 @@ export const copy = {
     clearError: "Скрыть сообщение",
     quit: "Закрыть приложение",
     dry: "Режим разработки",
-    version: "Предварительная версия 0.3.1",
+    version: "Предварительная версия 0.3.2",
     browserWarning:
       "Разрешайте браузер после установки расширения. Только проверенный процесс браузера допускается в строгую сессию.",
   },
@@ -202,6 +203,7 @@ export const copy = {
     locked: "Settings are locked until this session ends",
     extensionMissing: "Extension disconnected",
     extensionReady: "Extension connected",
+    extensionUpdateRequired: "Update the extension",
     extensionHint:
       "Website blocking requires the Chrome / Edge extension. Unverified browsers will be closed in strict mode.",
     control: "BY YOUR OWN DESIGN",
@@ -224,14 +226,14 @@ export const copy = {
     exactDomain: "Exact domain",
     resourceDomains: "Resource domains",
     resourceHint:
-      "If a page loads without styling, add the exact domains of its CSS, JavaScript, images or API. They are allowed only as this site's resources; direct navigation and embedded pages stay blocked. Changes apply to the next session.",
+      "Styles, scripts, images, APIs and music requested by an allowed site load automatically. Saved extra resource domains remain part of the profile. Navigation and embedded pages on other domains need separate permission.",
     githubResourcesHint:
-      "GitHub loads styles and scripts from github.githubassets.com and images from githubusercontent.com. Explicitly approve the listed resource domains:",
+      "Optional GitHub resource entries for saved profiles. The updated extension already loads page resources automatically:",
     addGithubResources: "Allow GitHub resources",
     siteEmpty: "No websites yet",
     siteEmptyHint: "Strict mode will block all HTTP(S) websites.",
     dependencies:
-      "Sign-in and redirects may need additional domains. Add them intentionally; Focus Lock never allows them automatically.",
+      "Allowed sites load their resources automatically. Add a separate sign-in or embedded page domain if you need to navigate to it.",
     save: "Save",
     saved: "Saved",
     name: "Name",
@@ -340,7 +342,7 @@ export const copy = {
     clearError: "Dismiss message",
     quit: "Quit application",
     dry: "Development mode",
-    version: "Preview release 0.3.1",
+    version: "Preview release 0.3.2",
     browserWarning:
       "Install the extension before allowing a browser. Only verified browser processes can enter a strict session.",
   },

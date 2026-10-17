@@ -57,12 +57,22 @@ const destination = http.createServer((req, res) => {
   }
   if (req.url === "/style.css") {
     res.setHeader("Content-Type", "text/css");
-    res.end("body { background-color: rgb(17, 34, 51); }");
+    res.end(`@import url("http://127.0.0.1:${destination.address().port}/theme.css"); body { background-color: rgb(17, 34, 51); }`);
+    return;
+  }
+  if (req.url === "/theme.css") {
+    res.setHeader("Content-Type", "text/css");
+    res.end("h1 { color: rgb(70, 80, 90); }");
+    return;
+  }
+  if (req.url === "/api-data") {
+    res.setHeader("Content-Type", "application/json");
+    res.end(JSON.stringify({ loaded: true }));
     return;
   }
   if (req.url === "/app.js") {
     res.setHeader("Content-Type", "application/javascript");
-    res.end("window.resourceScriptLoaded = true;");
+    res.end(`window.resourceScriptLoaded = true; fetch("http://127.0.0.1:${destination.address().port}/api-data").then(r => r.json()).then(data => { window.resourceAPILoaded = data.loaded; });`);
     return;
   }
   if (req.url === "/image.svg") {
@@ -323,24 +333,16 @@ try {
     "PASS real Chrome DNR: allowlisted page opens, unlisted page redirects",
   );
   await page.goto(allowed);
-  let failed = "";
-  page.on("requestfailed", (r) => {
-    if (r.url() === blocked) failed = r.failure()?.errorText || "";
-  });
-  await page.evaluate(async (url) => {
-    try {
-      await fetch(url);
-    } catch {
-      /* Expected block. */
-    }
-  }, blocked);
-  assert.match(failed, /BLOCKED_BY_CLIENT/);
+  assert.equal(await page.evaluate(async (url) => (await fetch(url)).ok, blocked), true);
   console.log(
-    "PASS strict mode also blocks non-allowlisted network subresources",
+    "PASS allowed page can load its cross-domain API without permitting direct navigation",
   );
   // Reproduce a GitHub-like page whose assets are on a separate domain.
   await page.goto(`http://localhost:${port}/resource-page`);
-  assert.equal(await page.evaluate(() => !!window.resourceScriptLoaded), false);
+  assert.equal(await page.evaluate(() => !!window.resourceScriptLoaded), true);
+  await page.waitForFunction(() => window.resourceAPILoaded === true);
+  assert.equal(await page.locator("h1").evaluate((el) => getComputedStyle(el).color), "rgb(70, 80, 90)");
+  console.log("PASS cold page loads cross-domain CSS, imported CSS, script, image and API without manual CDN entries");
   rules.sessionId = "c".repeat(32);
   rules.websites = [
     { domain: "localhost", subdomains: false, resources: ["127.0.0.1"] },
@@ -369,7 +371,7 @@ try {
     );
   assert.ok(
     (await match("stylesheet", `http://localhost:${port}`)).matchedRules.some(
-      (r) => r.ruleId === 1001,
+      (r) => r.ruleId === 1001 || r.ruleId === 500,
     ),
   );
   assert.ok(
@@ -385,8 +387,76 @@ try {
   await page.goto(blocked);
   assert.match(page.url(), /blocked.html$/);
   console.log(
-    "PASS cross-domain CSS, JavaScript and images load only after explicit approval; unrelated origins, frames and direct CDN navigation remain blocked",
+    "PASS automatic page resources and saved CDN permissions keep unrelated origins, frames and direct CDN navigation blocked",
   );
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Network.enable");
+  await cdp.send("Network.setCacheDisabled", { cacheDisabled: true });
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await api({ ...rules, active: false });
+    await until(async () => (await api()).some((s) => s.applied === "" && s.connected));
+    rules.sessionId = randomBytes(16).toString("hex");
+    rules.websites = [{ domain: "localhost", subdomains: false }];
+    await api(rules);
+    await until(async () => (await api()).some((s) => s.applied === rules.sessionId && s.connected));
+    await page.goto(`http://localhost:${port}/resource-page`);
+    await page.waitForFunction(() => window.resourceAPILoaded === true);
+    assert.equal(await page.evaluate(() => getComputedStyle(document.body).backgroundColor), "rgb(17, 34, 51)");
+    assert.equal(await page.locator("h1").evaluate((el) => getComputedStyle(el).color), "rgb(70, 80, 90)");
+    await page.goto(blocked);
+    assert.match(page.url(), /blocked.html$/);
+  }
+  console.log("PASS five start/stop cycles with cache disabled: page CSS/scripts/API load, direct navigation stays blocked");
+
+  // Exercise the actual native channel while Chrome takes longer than one
+  // lease to replace a tab. Only this disposable extension worker is delayed.
+  await api({ ...rules, active: false });
+  await until(async () => (await api()).some((s) => s.applied === "" && s.connected));
+  const slowTab = await context.newPage();
+  await slowTab.goto(blocked);
+  await worker.evaluate(() => {
+    const update = chrome.tabs.update;
+    let delayed = false;
+    chrome.tabs.update = async (...args) => {
+      if (!delayed) {
+        delayed = true;
+        await new Promise((resolve) => setTimeout(resolve, 8500));
+      }
+      return update(...args);
+    };
+  });
+  rules.exercise = true;
+  rules.sessionId = randomBytes(16).toString("hex");
+  await api(rules);
+  await until(async () => (await api()).some((s) => s.applied === rules.sessionId && s.connected && s.resourceCapable), 20000);
+  await slowTab.waitForURL(`chrome-extension://${extensionID}/blocked.html`);
+  await slowTab.close();
+  rules.exercise = false;
+  console.log("PASS real native heartbeat survives an 8.5-second tab update and acknowledges only after completion");
+
+  if (process.env.FOCUS_LOCK_LIVE_SITES === "1") {
+    for (const url of ["https://github.com/", "https://kotlinlang.org/docs/home.html", "https://music.yandex.ru/"]) {
+      rules.sessionId = randomBytes(16).toString("hex");
+      rules.websites = [{ domain: new URL(url).hostname, subdomains: false }];
+      await api(rules);
+      await until(async () => (await api()).some((s) => s.applied === rules.sessionId && s.connected));
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const denied = [];
+        const recordDenied = (request) => {
+          if (/BLOCKED_BY_CLIENT/.test(request.failure()?.errorText || "") && !["document", "other"].includes(request.resourceType()))
+            denied.push({ host: new URL(request.url()).hostname, type: request.resourceType() });
+        };
+        page.on("requestfailed", recordDenied);
+        await cdp.send("Network.clearBrowserCache");
+        await page.goto(url, { waitUntil: "load", timeout: 60000 });
+        await delay(2500);
+        page.off("requestfailed", recordDenied);
+        assert.ok(await page.evaluate(() => document.styleSheets.length > 0), `${url}: styles must load without cache`);
+        assert.deepEqual(denied, [], `${url}: extension must not block page dependencies`);
+        console.log(`PASS live cold-load ${new URL(url).hostname}, attempt ${attempt + 1}: ${await page.title()}`);
+      }
+    }
+  }
   if (process.env.FOCUS_LOCK_LIVE_GITHUB === "1") {
     rules.sessionId = "d".repeat(32);
     rules.websites = [

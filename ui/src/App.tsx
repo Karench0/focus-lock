@@ -252,7 +252,8 @@ export function App() {
   const profile =
     data?.profiles.find((p) => p.id === profileID) || data?.profiles[0];
   const sessionProfile = active ? data?.session.profile : profile;
-  const browserReady = data?.browsers.some((b) => b.connected);
+  const browserReady = data?.browsers.some((b) => b.connected && b.resourceCapable);
+  const extensionOutdated = data?.browsers.some((b) => b.connected && !b.resourceCapable);
   const refresh = useCallback(async () => {
     try {
       setData(await call<State>("state"));
@@ -355,11 +356,18 @@ export function App() {
   const beginStudy = () =>
     void run(async () => {
       if (!studyPlan) return;
-      await call("startStorozhenko", {
-        token: studyPlan.token,
-        self: "storozhenko",
-        confirmed: true,
-      });
+      try {
+        await call("startStorozhenko", {
+          token: studyPlan.token,
+          self: "storozhenko",
+          confirmed: true,
+        });
+      } catch (error) {
+        // Start tokens are consumed on an actual attempt. Offer a fresh review
+        // rather than letting every subsequent click reuse an invalid token.
+        try { setStudyPlan(await call<StudyPlan>("prepareStorozhenko")); } catch { /* Keep the original error visible. */ }
+        throw error;
+      }
       setModal(null);
       setPage("dashboard");
       setDismissedSession("");
@@ -710,7 +718,7 @@ export function App() {
         <Globe2 size={20} />
         <h3>{t.extension}</h3>
         <span className={`badge ${browserReady ? "good" : ""}`}>
-          {browserReady ? t.extensionReady : t.extensionMissing}
+          {extensionOutdated ? t.extensionUpdateRequired : browserReady ? t.extensionReady : t.extensionMissing}
         </span>
       </div>
       <p>{t.extensionSteps}</p>
@@ -892,7 +900,7 @@ export function App() {
             <LockKeyhole size={15} />
             {t.local}
           </div>
-          <span className="version">v0.3.1 · Windows</span>
+          <span className="version">v0.3.2 · Windows</span>
         </div>
       </aside>
       <main>
@@ -1543,12 +1551,14 @@ export function App() {
         {modal === "study" && studyPlan && (
           <Modal label={t.studyConsent} onClose={() => setModal(null)}>
             <StorozhenkoConsent
+              key={studyPlan.token}
               language={data.settings.language}
               busy={busy}
               blocked={studyPlan.blocked}
               browserReady={studyPlan.browserReady}
               onConfirm={beginStudy}
               onCancel={() => setModal(null)}
+              onRetry={prepareStudy}
             />
             {error && (
               <p className="kotlin-feedback" role="alert">

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.2 — 2026-10-17 (prerelease)
+
+- Allow page-initiated CSS, scripts, fonts, images, API calls and media automatically while keeping other website destinations and unlisted frames restricted.
+- Keep native heartbeats independent of long process/discovery work and asynchronous browser rule/tab operations; reconnect promptly after transient disconnects and cancel pending tab sweeps on stop/disconnect.
+- Permit restarted instances of reviewed executable paths, skip already-exited processes, refresh failed start tokens, wait up to 15 seconds for exercise acknowledgement, and indicate outdated extensions.
+- Format question examples as indented Kotlin code blocks with syntax highlighting and keyboard-accessible scrolling.
+
 ## 0.3.1 — 2026-10-17 (prerelease)
 
 - Exempt DefenderSessionHelper and Defender platform directories, elevated processes, and processes without termination permission from the closure review.

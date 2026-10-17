@@ -61,6 +61,20 @@ export function compileRules(state) {
         action: { type: "allow" },
         condition: { ...condition, excludedResourceTypes: ["main_frame"] },
       });
+      // A site's page needs its CDN styles/scripts, API responses, fonts and
+      // media even when those hosts are not destinations in the allowlist.
+      // This grants only resource requests initiated by that site; navigating
+      // directly to another host or embedding an unlisted frame stays blocked.
+      rules.push({
+        id: 500 + i,
+        priority: 10,
+        action: { type: "allow" },
+        condition: {
+          regexFilter: "^(https?|wss?)://",
+          initiatorDomains: [site.domain],
+          excludedResourceTypes: ["main_frame", "sub_frame"],
+        },
+      });
       const resources = site.resources ?? [];
       if (!Array.isArray(resources) || resources.length > 16)
         throw new Error("Invalid resource policy");

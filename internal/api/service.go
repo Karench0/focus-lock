@@ -10,6 +10,7 @@ import (
 
 	"github.com/Karench0/focus-lock/internal/applications"
 	"github.com/Karench0/focus-lock/internal/bridge"
+	"github.com/Karench0/focus-lock/internal/kotlinquiz"
 	"github.com/Karench0/focus-lock/internal/model"
 	"github.com/Karench0/focus-lock/internal/profiles"
 	"github.com/Karench0/focus-lock/internal/session"
@@ -18,18 +19,21 @@ import (
 )
 
 type Service struct {
-	mu          sync.Mutex
-	store       *storage.Store
-	engine      *session.Engine
-	bridge      *bridge.Server
-	baseline    map[uint32]int64
-	failed      map[uint32]int64
-	preview     bool
-	lastPersist time.Time
-	lastError   string
-	notify      func()
-	stop        chan struct{}
-	done        chan struct{}
+	mu            sync.Mutex
+	store         *storage.Store
+	engine        *session.Engine
+	bridge        *bridge.Server
+	baseline      map[uint32]int64
+	failed        map[uint32]int64
+	preview       bool
+	lastPersist   time.Time
+	lastError     string
+	notify        func()
+	stop          chan struct{}
+	done          chan struct{}
+	studyPlan     *studyPreparation
+	studyQuiz     *kotlinquiz.Quiz
+	startingStudy bool
 }
 type State struct {
 	Session    session.Snapshot `json:"session"`
@@ -107,7 +111,7 @@ func (s *Service) loop() {
 					}
 					s.lastPersist = time.Now()
 				}
-				if !s.preview && running(s.engine.Snapshot()) {
+				if !s.preview && !s.startingStudy && running(s.engine.Snapshot()) {
 					s.monitor(snap)
 				}
 			}
@@ -123,12 +127,17 @@ func (s *Service) monitor(snap session.Snapshot) {
 		s.flush()
 		return
 	}
-	check := func(p applications.Process, ps []applications.Process) bool { return s.bridge.Healthy(p, ps, snap.ID) }
+	check := func(p applications.Process, ps []applications.Process) bool {
+		if snap.Exercise {
+			return s.bridge.HealthyStudy(p, ps, snap.ID)
+		}
+		return s.bridge.Healthy(p, ps, snap.ID)
+	}
 	for _, p := range all {
 		if p.Safe {
 			continue
 		}
-		if s.baseline[p.PID] == p.Created && applications.Browser(p.Path) == "" {
+		if !snap.Exercise && s.baseline[p.PID] == p.Created && applications.Browser(p.Path) == "" {
 			continue
 		}
 		if s.failed[p.PID] == p.Created {
@@ -145,14 +154,31 @@ func (s *Service) monitor(snap session.Snapshot) {
 		if !running(s.engine.Snapshot()) {
 			break
 		}
-		if err = applications.Terminate(p); err != nil {
-			s.failed[p.PID] = p.Created
+		if err = s.recordTermination(p, applications.Terminate(p)); err != nil {
 			s.lastError = fmt.Sprintf("Could not close %s; it may require elevated rights.", p.Name)
-		} else {
-			s.engine.AddBlock(false)
+			if snap.Exercise {
+				s.engine.Stop("monitor_error")
+				s.flush()
+				break
+			}
 		}
 	}
 }
+
+// Both startup and monitoring exempt processes protected by Windows. Remember
+// the exact instance so polling does not repeatedly attempt the denied action.
+func (s *Service) recordTermination(p applications.Process, err error) error {
+	if err != nil {
+		s.failed[p.PID] = p.Created
+		if applications.IsProtectedProcessError(err) {
+			return nil
+		}
+		return err
+	}
+	s.engine.AddBlock(false)
+	return nil
+}
+
 func (s *Service) State() (State, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -366,7 +392,7 @@ func (s *Service) rules() bridge.Rules {
 	defer s.mu.Unlock()
 	snap := s.engine.Snapshot()
 	settings, _ := s.store.Settings()
-	r := bridge.Rules{Active: running(snap), Mode: snap.Profile.Mode, Websites: snap.Profile.Websites, Language: settings.Language, LeaseMS: 6000}
+	r := bridge.Rules{Exercise: snap.Exercise, Active: running(snap), Mode: snap.Profile.Mode, Websites: snap.Profile.Websites, Language: settings.Language, LeaseMS: 6000}
 	if r.Active {
 		r.SessionID = snap.ID
 	}

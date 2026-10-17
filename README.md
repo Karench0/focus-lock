@@ -2,7 +2,7 @@
 <h1 align="center">Focus Lock</h1>
 <p align="center">Choose your tools. Set your time. Own your attention.</p>
 <p align="center">
-  <a href="https://github.com/Karench0/focus-lock/releases"><img alt="Version" src="https://img.shields.io/badge/version-0.1.0_preview-3B82F6?style=flat-square"></a>
+  <a href="https://github.com/Karench0/focus-lock/releases"><img alt="Version" src="https://img.shields.io/badge/version-0.3.1_preview-3B82F6?style=flat-square"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/badge/license-MIT-949CA8?style=flat-square"></a>
   <img alt="Windows 11 x64" src="https://img.shields.io/badge/Windows-11_x64-949CA8?style=flat-square">
   <a href="https://github.com/Karench0/focus-lock/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Karench0/focus-lock/actions/workflows/ci.yml/badge.svg"></a>
@@ -15,7 +15,7 @@
 
 Focus Lock is a local desktop app for voluntary, time-limited focus on Windows 11. Pick the applications and websites your task needs, choose a session length, and let the app enforce those boundaries. The interface is deliberately quiet: graphite surfaces, clear typography, a single blue accent, and a timer that stays in charge of the screen.
 
-**0.1.0 is a prerelease.** Process control and Chromium website filtering are implemented, but this is not an OS security boundary. Read the limitations below before using it with valuable unsaved work. Task Manager remains available as an emergency exit.
+**0.3.1 is a prerelease.** Process control and Chromium website filtering are implemented, but this is not an OS security boundary. Read the limitations below before using it with valuable unsaved work. Task Manager remains available as an emergency exit.
 
 ## Features
 
@@ -23,7 +23,7 @@ Focus Lock is a local desktop app for voluntary, time-limited focus on Windows 1
 - Explicit child-process permission limited to the selected application's installation directory.
 - Strict website allowlist by default, or a distraction blocklist; exact domains, optional subdomains, IDN normalization and localhost.
 - Separate profiles for work, reading, study, and any task you create.
-- A draggable, always-on-top mini timer with a short resize animation and the same early-exit confirmation/delay as the main window.
+- A draggable, always-on-top mini timer with a short resize animation and the same exit procedure as the main window: confirmation/delay for ordinary sessions, or a Kotlin question for the personal exercise.
 - Go-owned session and exit clocks, preset or custom lengths, configurable exit delay, and cancellation of an early exit.
 - SQLite settings, local session history, daily/weekly charts and aggregate blocked-attempt counts.
 - A Windows tray icon, close-window choices, completion notification, and English/Russian UI (Russian by default).
@@ -68,7 +68,7 @@ The unpacked extension has a stable public-key-derived ID, `ilmpmofmjbomibcnecek
 3. During a session, click **Mini timer** in the title bar. Drag its grip to move it; use the arrow to return to the original window. Stop requests confirmation and keeps restrictions active throughout the configured delay. The minus icon hides it in the system tray; the tray’s Open item restores the full window.
 4. Configure an early-exit delay in **Settings** (60 seconds by default).
 5. Return to Dashboard, choose 15–120 minutes or a custom 1–1440 minutes, and press **Start Focus**.
-6. If the preflight lists disallowed open applications, save your work and close them, or update the profile. Retry when ready. Starting never silently kills these existing windows.
+6. If the preflight lists disallowed open applications, save your work and close them, or update the profile. Retry when ready. Starting an ordinary profile never silently kills these existing windows. The separate personal exercise requires explicit consent to close its reviewed list of applications.
 7. Work until the timer ends. To leave early, confirm and wait out your chosen delay. You can cancel that countdown while the main timer continues.
 
 Closing the window during a session offers **Minimize to tray** or the early-exit procedure. Use the tray icon to reopen it. If needed, end `FocusLock.exe` in Task Manager; process enforcement stops immediately, and the extension clears its rules on native disconnection or lease expiry.
@@ -77,7 +77,7 @@ Closing the window during a session offers **Minimize to tray** or the early-exi
 
 The Go process owns the state machine `IDLE → ACTIVE → EXIT_PENDING → FINISHED`. Cancelling an exit returns to `ACTIVE`. Time comparisons use Go's in-process monotonic timestamps; React displays backend snapshots. The earliest deadline wins even if a scheduler tick observes both deadlines at once.
 
-Every 700 ms, the app inspects same-user processes in the current Windows session. Newly observed disallowed user processes are terminated after identity and safety checks. System paths, protected/critical processes, elevated processes, other users and sessions, security agents and known accessibility tools are exempt. Existing background processes are left alone. Process polling cannot prevent the first instructions of an executable from running.
+Every 700 ms, the app inspects same-user processes in the current Windows session. Newly observed disallowed user processes are terminated after identity and safety checks. System paths, protected/critical processes, elevated processes, other users and sessions, security agents and known accessibility tools are exempt. Ordinary sessions leave existing background processes alone. The personal exercise also reviews existing unrelated background processes for closure, then rechecks process identity against the confirmed list before starting. Process polling cannot prevent the first instructions of an executable from running.
 
 The extension exchanges rules through a tiny Native Messaging executable and a current-user-ACL named pipe. The app checks the connecting host path and its Chrome/Edge parent process. Each rule update is acknowledged after `declarativeNetRequest.updateSessionRules` succeeds. In a strict session, a browser needs a recent acknowledgement for its browser process tree. The extension never edits `hosts`, proxy settings, firewall rules or system policies.
 
@@ -112,9 +112,9 @@ Build the complete distributable (includes the native host and extension):
 
 ```powershell
 ./scripts/build.ps1
-./scripts/package.ps1 -Version 0.1.0
+./scripts/package.ps1 -Version 0.3.1
 # Optional, with Inno Setup 6 installed:
-./scripts/package.ps1 -Version 0.1.0 -Installer
+./scripts/package.ps1 -Version 0.3.1 -Installer
 ```
 
 The app is at `build/bin/FocusLock.exe`; release assets are under `build/release/`. `wails build` alone only builds the GUI, so use the script for a complete package. In development, register a host built beside the GUI if you test Native Messaging.
@@ -158,10 +158,10 @@ docs/                       Architecture, test evidence and release notes
 ## Security & Limitations
 
 - This is voluntary self-discipline software. An administrator, renamed executable, alternate browser, disabled extension, unverified profile, or deliberate manipulation can bypass it. Task Manager is never blocked.
-- Polling is reactive. It can close a newly launched application, and **unsaved work in that process may be lost**. Save work before starting. Existing background processes are exempt; this preview does not provide exhaustive control of every installed application, UWP activation or every security/accessibility product.
+- Polling is reactive. It can close a newly launched application, and **unsaved work in that process may be lost**. Save work before starting. Existing background processes are exempt in ordinary sessions; the personal exercise includes unrelated background processes in its explicit closure review. This preview does not provide exhaustive control of every installed application, UWP activation or every security/accessibility product.
 - Known browsers are recognized by executable family and a verified native-host parent tree. Multiple profiles may share a browser root, and extension permissions/incognito settings are not fully attestable. Use one dedicated browser profile. Unsupported browsers are excluded when recognized, but detection is not a universal browser classifier.
 - Allowed child processes must remain inside the allowed program's directory. Some programs need additional explicit executables. Allowing a terminal/editor/interpreter inherently enables more ways to launch other code.
-- Web filtering covers HTTP(S) navigation and network requests (including WebSockets), not `file:`, internal browser pages, cached service-worker responses, browser-internal features, existing offline pages, VPN software or other apps' network traffic. Previously loaded pages are not erased.
+- Web filtering covers HTTP(S) navigation and network requests (including WebSockets), not `file:`, internal browser pages, cached service-worker responses, browser-internal features, existing offline pages, VPN software or other apps' network traffic. Ordinary sessions leave previously loaded pages in place; starting the personal exercise replaces already-open disallowed HTTP(S) tabs with the blocked page.
 - Login, CDNs, redirects and embedded content may need extra domains. Nothing is automatically allowlisted; review and add the dependencies you need before the session.
 - Native host registrations are per-user HKCU entries. The installer removes them on uninstall. For a portable install, delete the two `...\NativeMessagingHosts\com.focuslock.bridge` keys under `HKCU\Software\Google\Chrome` and `HKCU\Software\Microsoft\Edge`, remove the extension, and delete the app folder. Data at `%LOCALAPPDATA%\FocusLock` can be removed separately.
 - After a crash/reboot the app starts idle, marks an unfinished record as recovered and never restores enforcement. Focus time after the last persisted heartbeat is not credited. Sleep/suspend and browser scheduling still require testing across hardware before a stable release.
@@ -176,3 +176,13 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md), open a focused issue, and include repro
 ## License
 
 [MIT](LICENSE), copyright © 2026 Karen Mkrtchyan. Third-party libraries retain their own licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+## Personal Kotlin exercise
+
+In Settings, activate the small circle near the bottom-right three times within 1.6 seconds (each gap no more than 0.8 seconds). The cursor deliberately stays ordinary. The extra panel contains **Storozhenko mode**. This personal mode requires the explicit “I am Storozhenko” confirmation; the app does not infer or verify a person's identity from their account name.
+
+Save work before confirming: the review lists unrelated apps that will close; already-open unrelated HTTP(S) tabs are replaced with the blocked page. Only the default Chrome/Edge with the updated connected extension and installed IntelliJ IDEA/Android Studio are allowed, plus existing system/security/accessibility exemptions. The study website is `kotlinlang.org`, with fonts from `resources.jetbrains.com` permitted only as site resources. YouTube/TikTok and Steam/Dota are outside this temporary policy, even if an ordinary profile allows them.
+
+Elevated apps and processes without termination permission are skipped. If Windows or an antivirus denies closure after the review, that process is exempted for its current instance and the exercise continues closing ordinary disallowed apps. This does not request administrator privileges or count the skipped process as closed.
+
+The default browser opens https://kotlinlang.org/docs/home.html. A correct answer to one of 20 middle-level Russian Kotlin questions (eight shuffled options) finishes the exercise. A wrong answer leaves it active and offers a different question. Normal profiles/settings remain intact. No hidden mode survives an app restart. Task Manager remains an emergency exit; this is a voluntary local focus tool.

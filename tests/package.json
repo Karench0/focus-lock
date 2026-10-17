@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "ui": "node ui.mjs",
-    "extension": "node extension.mjs"
+    "extension": "node extension.mjs",
+    "storozhenko": "node storozhenko.mjs"
   },
   "devDependencies": {
     "playwright": "1.62.1"

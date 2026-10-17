@@ -147,6 +147,37 @@ func (a *App) Call(command, payload string) (string, error) {
 		}
 	case "requestExit":
 		err = a.service.RequestExit()
+	case "prepareStorozhenko":
+		result, err = a.service.PrepareStorozhenko()
+	case "startStorozhenko":
+		var p struct {
+			Token     string `json:"token"`
+			Self      string `json:"self"`
+			Confirmed bool   `json:"confirmed"`
+		}
+		if err = decode(&p); err == nil {
+			err = a.service.StartStorozhenko(p.Token, p.Self, p.Confirmed)
+		}
+	case "kotlinQuestion":
+		result, err = a.service.KotlinQuestion()
+	case "answerKotlin":
+		var p struct {
+			Token  string `json:"token"`
+			Option *int   `json:"option"`
+		}
+		if err = decode(&p); err == nil {
+			if p.Option == nil {
+				return "", fmt.Errorf("select an answer")
+			}
+			var correct bool
+			correct, err = a.service.AnswerKotlin(p.Token, *p.Option)
+			result = map[string]bool{"correct": correct}
+		}
+	case "openKotlinDocs":
+		if a.context() == nil {
+			return "", fmt.Errorf("requires desktop app")
+		}
+		err = desktop.OpenKotlinDocs()
 	case "cancelExit":
 		err = a.service.CancelExit()
 	case "pickApplication":

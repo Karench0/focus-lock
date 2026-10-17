@@ -1981,3 +1981,12 @@ td {
     scroll-behavior: auto !important;
   }
 }
+
+.study-status {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #a5bce0;
+  padding: 16px 0;
+  font-size: 11px;
+}

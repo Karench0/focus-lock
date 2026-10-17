@@ -48,6 +48,9 @@ jobs:
       - name: UI end-to-end tests
         working-directory: tests
         run: npm run ui
+      - name: Kotlin exercise end-to-end
+        working-directory: tests
+        run: npm run storozhenko
       - name: Native Messaging and fail-open integration
         shell: pwsh
         run: |

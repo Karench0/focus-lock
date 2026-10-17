@@ -125,18 +125,28 @@ export function CompactTimer({
                   ? t.finished
                   : pending
                     ? t.miniExitIn
-                    : t.miniRemaining}
+                    : data.session.exercise
+                      ? t.studyElapsed
+                      : t.miniRemaining}
               </span>
               <strong
                 role="timer"
-                aria-label={pending ? t.miniExitIn : t.miniRemaining}
+                aria-label={
+                  pending
+                    ? t.miniExitIn
+                    : data.session.exercise
+                      ? t.studyElapsed
+                      : t.miniRemaining
+                }
               >
                 {finished
                   ? "00:00"
                   : time(
                       pending
                         ? data.session.exitRemainingSeconds
-                        : data.session.remainingSeconds,
+                        : data.session.exercise
+                          ? data.session.elapsedSeconds
+                          : data.session.remainingSeconds,
                     )}
               </strong>
             </div>
@@ -167,7 +177,9 @@ export function CompactTimer({
                 title={t.miniStop}
                 aria-label={t.miniStop}
                 disabled={busy}
-                onClick={() => setConfirm(true)}
+                onClick={() =>
+                  data.session.exercise ? onStop() : setConfirm(true)
+                }
               >
                 <Square size={16} fill="currentColor" />
               </button>
@@ -182,7 +194,9 @@ export function CompactTimer({
                 ? "✓"
                 : pending
                   ? t.miniStillLocked
-                  : `${Math.round(data.session.progress * 100)}%`}
+                  : data.session.exercise
+                    ? "KOTLIN"
+                    : `${Math.round(data.session.progress * 100)}%`}
             </span>
           </footer>
         </>
@@ -197,18 +211,22 @@ export function CompactTimer({
           {t.miniError}
         </button>
       )}
-      <div
-        className="mini-progress"
-        role="progressbar"
-        aria-label={t.focusTime}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        aria-valuenow={Math.round(data.session.progress * 100)}
-      >
-        <i
-          style={{ width: `${finished ? 100 : data.session.progress * 100}%` }}
-        />
-      </div>
+      {!data.session.exercise && (
+        <div
+          className="mini-progress"
+          role="progressbar"
+          aria-label={t.focusTime}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(data.session.progress * 100)}
+        >
+          <i
+            style={{
+              width: `${finished ? 100 : data.session.progress * 100}%`,
+            }}
+          />
+        </div>
+      )}
     </motion.section>
   );
 }

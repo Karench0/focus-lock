@@ -1,5 +1,6 @@
 import { compileRules, replaceRules } from "./rules.mjs";
 import { Lease } from "./lease.mjs";
+import { enforceStudyTabs } from "./study-tabs.mjs";
 
 let port = null,
   applied = "",
@@ -38,7 +39,7 @@ function disconnect() {
 function send(ok = true) {
   if (!port) return;
   try {
-    port.postMessage({ ok, applied, blocks });
+    port.postMessage({ ok, applied, blocks, studyCapable: true });
     blocks = 0;
   } catch {
     disconnect();
@@ -74,6 +75,13 @@ function connect() {
         if (changed) {
           await replaceRules(chrome.declarativeNetRequest, compileRules(state));
           if (generation !== epoch) return;
+          await enforceStudyTabs(
+            chrome.tabs,
+            state,
+            chrome.runtime.getURL("blocked.html"),
+            () => generation === epoch && !!port,
+          );
+          if (generation !== epoch || !port) return;
           applied = id;
           active = state.active;
         }
@@ -88,6 +96,7 @@ function connect() {
         if (changed) send();
         else next = setTimeout(() => send(), 2000);
       } catch (error) {
+        if (generation !== epoch || !port) return;
         void chrome.storage.session.set({ lastError: String(error) });
         disconnect();
       }

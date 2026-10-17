@@ -21,7 +21,21 @@ export interface Settings {
   exitDelaySeconds: number;
   onboarded: boolean;
 }
+export interface KotlinQuestion {
+  token: string;
+  prompt: string;
+  options: string[];
+  sourceUrl: string;
+}
+export interface StudyPlan {
+  token: string;
+  blocked: { name: string; path: string }[];
+  browserReady: boolean;
+  docsUrl: string;
+}
 export interface Session {
+  exercise: boolean;
+  elapsedSeconds: number;
   state: "IDLE" | "ACTIVE" | "EXIT_PENDING" | "FINISHED";
   id: string;
   profile: Profile;

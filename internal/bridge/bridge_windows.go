@@ -26,6 +26,7 @@ const HostName = "com.focuslock.bridge"
 // ExtensionID is derived from the public key in manifest.json (not a secret).
 
 type Rules struct {
+	Exercise  bool            `json:"exercise"`
 	SessionID string          `json:"sessionId"`
 	Active    bool            `json:"active"`
 	Mode      string          `json:"mode"`
@@ -34,18 +35,20 @@ type Rules struct {
 	LeaseMS   int             `json:"leaseMs"`
 }
 type Ack struct {
-	Applied string `json:"applied"`
-	OK      bool   `json:"ok"`
-	Blocks  int    `json:"blocks"`
+	StudyCapable bool   `json:"studyCapable"`
+	Applied      string `json:"applied"`
+	OK           bool   `json:"ok"`
+	Blocks       int    `json:"blocks"`
 }
 type Status struct {
-	Browser   string    `json:"browser"`
-	Path      string    `json:"path"`
-	PID       uint32    `json:"pid"`
-	Connected bool      `json:"connected"`
-	Applied   string    `json:"applied"`
-	LastSeen  time.Time `json:"-"`
-	Created   int64     `json:"-"`
+	StudyCapable bool      `json:"studyCapable"`
+	Browser      string    `json:"browser"`
+	Path         string    `json:"path"`
+	PID          uint32    `json:"pid"`
+	Connected    bool      `json:"connected"`
+	Applied      string    `json:"applied"`
+	LastSeen     time.Time `json:"-"`
+	Created      int64     `json:"-"`
 }
 type Server struct {
 	mu       sync.Mutex
@@ -174,6 +177,7 @@ func (s *Server) serve(c net.Conn) {
 		rules := s.rules()
 		s.mu.Lock()
 		status.Connected = ack.OK
+		status.StudyCapable = ack.StudyCapable
 		status.Applied = ack.Applied
 		status.LastSeen = time.Now()
 		s.clients[c] = status
@@ -201,9 +205,15 @@ func (s *Server) Status() []Status {
 	return out
 }
 func (s *Server) Healthy(p applications.Process, all []applications.Process, id string) bool {
+	return s.healthy(p, all, id, false)
+}
+func (s *Server) HealthyStudy(p applications.Process, all []applications.Process, id string) bool {
+	return s.healthy(p, all, id, true)
+}
+func (s *Server) healthy(p applications.Process, all []applications.Process, id string, study bool) bool {
 	statuses := s.Status()
 	for _, st := range statuses {
-		if !st.Connected || st.Applied != id || !strings.EqualFold(p.Path, st.Path) {
+		if !st.Connected || (study && !st.StudyCapable) || st.Applied != id || !strings.EqualFold(p.Path, st.Path) {
 			continue
 		}
 		pid := p.PID

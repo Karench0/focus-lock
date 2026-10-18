@@ -278,11 +278,15 @@ export function App() {
       );
   }, [data?.session.state]);
   useEffect(() => {
-    const off = window.runtime?.EventsOn("close-request", () =>
-      setModal(exerciseRef.current ? "quiz" : "close"),
-    );
+    const off = window.runtime?.EventsOn("close-request", () => {
+      if (exerciseRef.current && modal !== "quiz") {
+        setQuestion(undefined);
+        setQuizFeedback("");
+      }
+      setModal(exerciseRef.current ? "quiz" : "close");
+    });
     return () => off?.();
-  }, []);
+  }, [modal]);
   useEffect(() => {
     if (!notice) return;
     const timer = setTimeout(() => setNotice(""), 2400);
@@ -330,8 +334,11 @@ export function App() {
   }, [modal]);
   const openExit = () => {
     if (exercise) {
+      if (modal === "quiz") return;
       void (async () => {
         if (compact) await changeWindow(false);
+        setQuestion(undefined);
+        setQuizFeedback("");
         setModal("quiz");
       })();
     } else setModal("exit");

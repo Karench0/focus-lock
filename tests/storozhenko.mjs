@@ -174,9 +174,15 @@ try {
   // Force one start failure, then ensure the same dialog receives a new
   // preparation token and asks for consent again instead of replaying it.
   let firstAttempt = true;
+  let nextQuestionDelay = 0;
   const startTokens = [];
   await page.route(base.origin + "/api", async (route) => {
     const payload = route.request().postDataJSON();
+    if (payload?.command === "kotlinQuestion" && nextQuestionDelay) {
+      const pause = nextQuestionDelay;
+      nextQuestionDelay = 0;
+      await delay(pause);
+    }
     if (payload?.command === "startStorozhenko") {
       startTokens.push(payload.payload.token);
       if (firstAttempt) {
@@ -319,8 +325,12 @@ try {
   await page.getByRole("button", { name: "Settings", exact: true }).click();
   await mode.waitFor();
   assert.equal(await mode.getAttribute("aria-checked"), "true");
+  nextQuestionDelay = 700;
   await mode.click();
   dialog = page.getByRole("dialog");
+  await dialog.getByRole("status").filter({ hasText: "Preparing your question" }).waitFor();
+  assert.equal(await dialog.getByRole("radio").count(), 0, "loading does not flash the previous question");
+  await poll(async () => (await dialog.getByRole("radio").count()) === 8, "all eight answers loaded after reopening");
   await dialog
     .getByRole("heading", {
       name: "One question before you finish",
